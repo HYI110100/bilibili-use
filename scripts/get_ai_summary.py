@@ -2,7 +2,7 @@
 """Get B站 AI summary with cache.
 
 Usage:
-  get_ai_summary.py <bv_id_or_url>  [--force]
+  get_ai_summary.py <bv_id_or_url>  [--force]  [--cache-dir <path>]
 
 Returns B站's AI-generated summary paragraph (~100-300 chars).
 Cache: ~/.cache/bilibili-use/<bv_id>/ai_summary.md (permanent)
@@ -13,7 +13,7 @@ import sys
 
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
-from config import resolve_cache_dir, read_resolve
+from config import resolve_cache_dir, resolve_bv_id
 
 
 def main():
@@ -37,9 +37,7 @@ def main():
             return
 
     # Resolve bv_id for API call
-    r = read_resolve(cache_dir)
-    from config import resolve_id
-    bv_id = r.get("bv_id") or resolve_id(raw_input)
+    bv_id = resolve_bv_id(raw_input, cache_dir)
 
     result = subprocess.run(
         ["bili", "video", bv_id, "--ai", "--yaml"],

@@ -2,7 +2,7 @@
 """Download full B站 video to local cache.
 
 Usage:
-  download_video.py <bv_id_or_url>  [--quality 1080p]  [--force]
+  download_video.py <bv_id_or_url>  [--quality 1080p]  [--force]  [--cache-dir <path>]
 
 Downloads complete video file via yt-dlp with cookies for best quality.
 Use this when you need the full video (not just frames).
@@ -16,7 +16,7 @@ import sys
 
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
-from config import resolve_cache_dir, read_resolve
+from config import resolve_cache_dir, resolve_bv_id, COOKIE_SOURCES
 
 
 def parse_quality(arg: str) -> str:
@@ -56,20 +56,13 @@ def main():
         return
 
     # Resolve bv_id for URL
-    r = read_resolve(cache_dir)
-    from config import resolve_id
-    bv_id = r.get("bv_id") or resolve_id(raw_input)
+    bv_id = resolve_bv_id(raw_input, cache_dir)
 
     url = f"https://www.bilibili.com/video/{bv_id}"
     fmt = "bestvideo+bestaudio/best"
     sort = f"res:{max_quality},codec:avc1:m4a"
 
-    cookie_sources = [
-        ["--cookies-from-browser", "firefox"],
-        ["--cookies-from-browser", "chrome"],
-    ]
-
-    for cookie_args in cookie_sources:
+    for cookie_args in COOKIE_SOURCES:
         cmd = [
             "yt-dlp", "-f", fmt, "-S", sort,
             "-o", str(video_path),

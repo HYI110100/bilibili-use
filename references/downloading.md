@@ -48,7 +48,7 @@ python3 scripts/get_video_info.py <bv_id> --cache-dir <cache_dir>
 python3 scripts/get_subtitle.py <bv_id> --cache-dir <cache_dir>
 # 短字幕 → 直接返回内容，读完
 # [SPLIT] → 返回分段 → 并行压缩（见 watching.md）
-# [NO SUBTITLE] → 降级到 --ai 或抽帧
+# [NO SUBTITLE] → 调 get_ai_summary.py 或抽帧
 ```
 
 ### AI 摘要（无字幕时）

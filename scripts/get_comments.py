@@ -2,12 +2,15 @@
 """Get B站 video comments with cache support.
 
 Usage:
-  get_comments.py <bv_id_or_url>  [--mode hot|latest]  [--count N]  [--force]
-  get_comments.py <bv_id_or_url>  --cache-dir <path>    [--mode hot|latest]
+  get_comments.py <bv_id_or_url>  [--mode hot|latest]  [--force]  [--cache-dir <path>]
 
 Output: YAML comment list with [CACHE: HIT/MISS] header.
 Each comment: {id, author, like, message}
 Cache TTL: 6h for hot, 1h for latest.
+
+Note: bili CLI's --comments returns a single ordered list (no sort API).
+--mode controls cache file name and TTL only, not the API request;
+if bili CLI changes to support sort modes, pass it through here.
 """
 
 import subprocess
@@ -17,7 +20,7 @@ import time
 
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
-from config import resolve_cache_dir
+from config import resolve_cache_dir, resolve_bv_id
 
 
 def cache_fresh(path: Path, ttl: int) -> bool:
@@ -82,9 +85,7 @@ def main():
         cache_status = "HIT"
     else:
         # Resolve bv_id for API call
-        from config import resolve_id, read_resolve
-        r = read_resolve(cache_dir)
-        bv_id = r.get("bv_id") or resolve_id(raw_input)
+        bv_id = resolve_bv_id(raw_input, cache_dir)
         comments = fetch_and_strip(bv_id)
         cache_file.write_text(yaml.dump(comments, allow_unicode=True, default_flow_style=False))
         cache_status = "MISS"

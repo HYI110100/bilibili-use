@@ -36,30 +36,9 @@ B站平台使用技能。**不是 CLI 命令手册**（那在 `bilibili-cli` ski
 
 ## 缓存约定
 
-```
-~/.cache/bilibili-use/
-│
-├── <bv_id>/                  # 单视频 / 多P的根
-│   ├── resolve.yaml          # 视频类型和解析结果
-│   ├── metadata.yaml         # 元数据（24h TTL）
-│   ├── subtitle.platform.srt # 平台字幕（永久）
-│   ├── subtitle.compressed.md# 压缩版（永久）
-│   ├── chunks/               # 超长字幕拆分片段
-│   ├── ai_summary.md         # B站 AI 总结（永久）
-│   ├── comments_hot.yaml     # 热门评论（6h TTL）
-│   ├── comments_latest.yaml  # 最新评论（1h TTL）
-│   ├── audio/                # 音频分段
-│   ├── frames/               # 流式抽帧
-│   ├── video_1080p.mp4       # 完整视频（7天 TTL）
-│   │
-│   ├── p1/                   # 多P视频第1P（结构同上）
-│   ├── p2/                   # 多P视频第2P
-│   └── index.yaml            # 多P列表（page, title, duration_s）
-│
-└── <collection_id>/          # 合集（sid）
-    ├── index.yaml            # 合集视频列表（bv_id, title, duration_s）
-    └── <bv_id>/              # 每个视频一个目录（结构同上）
-```
+缓存目录：`~/.cache/bilibili-use/`，单视频 / 多P / 合集三层结构。
+
+完整目录结构见 `AGENTS.md` 的「缓存」章节。
 
 所有 `scripts/*.py` 自动遵循：先查缓存 → 未命中才调 CLI/yt-dlp → 结果写缓存。
 

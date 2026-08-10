@@ -2,12 +2,11 @@
 """Extract frames from B站 videos at given timestamps via stream (no full download).
 
 Usage:
-  extract_frames.py <bv_id_or_url> --at 10,45,120  [--quality 4k]  [--force]
+  extract_frames.py <bv_id_or_url> --at 10,45,120  [--force]  [--cache-dir <path>]
   extract_frames.py <bv_id_or_url> --at 30  [--json]
 
 Uses yt-dlp -g to get direct stream URL, then ffmpeg seeks to each timestamp.
 No full video download — single frames extracted in ~0.5s each.
-Quality: defaults to max 1080p. Pass --quality 4k / 2160p / 2k / 720p.
 Cache: ~/.cache/bilibili-use/<bv_id>/frames/<timestamp>s.jpg
 
 Requires: yt-dlp, ffmpeg
@@ -20,18 +19,14 @@ import time
 
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
-from config import resolve_cache_dir, read_resolve
+from config import resolve_cache_dir, resolve_bv_id, COOKIE_SOURCES
 
 
 def get_stream_url(bv_id: str) -> str:
     """Get direct video stream URL via yt-dlp with cookies."""
     url = f"https://www.bilibili.com/video/{bv_id}"
 
-    cookie_sources = [
-        ["--cookies-from-browser", "firefox"],
-        ["--cookies-from-browser", "chrome"],
-    ]
-    for cookie_args in cookie_sources:
+    for cookie_args in COOKIE_SOURCES:
         result = subprocess.run(
             ["yt-dlp", "-g", *cookie_args, url],
             capture_output=True, text=True, timeout=30
@@ -99,9 +94,7 @@ def main():
         sys.exit(1)
 
     # Resolve bv_id for stream URL
-    r = read_resolve(cache_dir)
-    from config import resolve_id
-    bv_id = r.get("bv_id") or resolve_id(raw_input)
+    bv_id = resolve_bv_id(raw_input, cache_dir)
 
     # Check cache
     results = []

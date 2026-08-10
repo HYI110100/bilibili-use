@@ -63,3 +63,19 @@ def read_resolve(cache_dir: Path) -> dict:
     if rf.exists():
         return yaml.safe_load(rf.read_text()) or {}
     return {}
+
+
+def resolve_bv_id(raw_input: str, cache_dir: Path) -> str:
+    """Get bv_id from resolve.yaml cache, falling back to parsing raw_input.
+
+    Used by all data-fetching scripts to resolve bv_id in one line:
+        bv_id = resolve_bv_id(raw_input, cache_dir)
+    """
+    r = read_resolve(cache_dir)
+    return r.get("bv_id") or resolve_id(raw_input)
+
+
+COOKIE_SOURCES = [
+    ["--cookies-from-browser", "firefox"],
+    ["--cookies-from-browser", "chrome"],
+]

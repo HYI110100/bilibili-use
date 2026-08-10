@@ -16,7 +16,7 @@ import sys
 
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
-from config import resolve_cache_dir, read_resolve
+from config import resolve_cache_dir, resolve_bv_id
 
 
 def main():
@@ -50,9 +50,7 @@ def main():
         return
 
     # Resolve bv_id for API call
-    r = read_resolve(cache_dir)
-    from config import resolve_id
-    bv_id = r.get("bv_id") or resolve_id(raw_input)
+    bv_id = resolve_bv_id(raw_input, cache_dir)
 
     audio_dir.mkdir(parents=True, exist_ok=True)
     cache_flag = audio_dir / ".cached"

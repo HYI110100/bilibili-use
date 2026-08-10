@@ -16,7 +16,7 @@ import time
 
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
-from config import resolve_cache_dir, read_resolve, CACHE_DIR
+from config import resolve_cache_dir, resolve_bv_id, CACHE_DIR
 
 CACHE_TTL = 24 * 3600
 
@@ -71,9 +71,7 @@ def main():
     cache_file = cache_dir / "metadata.yaml"
 
     # Resolve bv_id for API call
-    r = read_resolve(cache_dir)
-    from config import resolve_id
-    bv_id = r.get("bv_id") or resolve_id(raw_input)
+    bv_id = resolve_bv_id(raw_input, cache_dir)
 
     # Cache check
     data = None
@@ -85,8 +83,11 @@ def main():
         cache_file.write_text(yaml.dump(data, allow_unicode=True, default_flow_style=False))
         cache_status = "MISS"
 
-    # Multi-P check (for backward compat, resolve step handles this primarily)
-    multi = detect_multipage(bv_id)
+    # Multi-P check only on cache MISS (resolve step handles this primarily)
+    if cache_status == "MISS":
+        multi = detect_multipage(bv_id)
+    else:
+        multi = {"multi_p": False}
     vinfo = data.get("data", {}).get("video", {})
     total_s = vinfo.get("duration_seconds", 0)
 

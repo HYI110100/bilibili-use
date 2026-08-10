@@ -87,23 +87,21 @@ def main():
         return
 
     # Age-based cleanup: remove old video .mp4 files only
+    # Uses rglob to find mp4 files at any depth (single, multi_p p<N>/, collection <sid>/<bv_id>/)
     cutoff = time.time() - parse_age(args.older_than)
     removed = 0
     freed = 0.0
 
-    for video_dir in CACHE_DIR.iterdir():
-        if not video_dir.is_dir():
-            continue
-        for mp4 in video_dir.glob("video_*.mp4"):
-            if mp4.stat().st_mtime < cutoff:
-                size_mb = mp4.stat().st_size / (1024 * 1024)
-                if args.dry_run:
-                    print(f"[DRY-RUN] Would remove: {mp4} ({size_mb:.1f}MB)")
-                else:
-                    mp4.unlink()
-                    print(f"[CLEANUP] Removed: {mp4.name} ({size_mb:.1f}MB)")
-                removed += 1
-                freed += size_mb
+    for mp4 in CACHE_DIR.rglob("video_*.mp4"):
+        if mp4.stat().st_mtime < cutoff:
+            size_mb = mp4.stat().st_size / (1024 * 1024)
+            if args.dry_run:
+                print(f"[DRY-RUN] Would remove: {mp4} ({size_mb:.1f}MB)")
+            else:
+                mp4.unlink()
+                print(f"[CLEANUP] Removed: {mp4.name} ({size_mb:.1f}MB)")
+            removed += 1
+            freed += size_mb
 
     if removed == 0:
         print(f"[CLEANUP] Nothing to clean (threshold: >{args.older_than})")

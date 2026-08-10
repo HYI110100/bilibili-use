@@ -2,7 +2,7 @@
 """Get B站 subtitles with auto-split for large content.
 
 Usage:
-  get_subtitle.py <bv_id_or_url>  [--force]  [--json]
+  get_subtitle.py <bv_id_or_url>  [--force]  [--cache-dir <path>]
 
 Behavior:
   - Small subtitles (≤3000 chars): returns full content + cache path.
@@ -23,7 +23,7 @@ import yaml
 
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
-from config import resolve_cache_dir, read_resolve
+from config import resolve_cache_dir, resolve_bv_id
 
 SPLIT_THRESHOLD = 3000
 CHUNK_SIZE = 1500
@@ -117,9 +117,7 @@ def main():
     cache_dir.mkdir(parents=True, exist_ok=True)
 
     # Resolve bv_id for API call
-    r = read_resolve(cache_dir)
-    from config import resolve_id
-    bv_id = r.get("bv_id") or resolve_id(raw_input)
+    bv_id = resolve_bv_id(raw_input, cache_dir)
     srt_file = cache_dir / "subtitle.platform.srt"
     compressed = cache_dir / "subtitle.compressed.md"
 

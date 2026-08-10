@@ -2,9 +2,9 @@
 """Local STT (speech-to-text) for B站 videos — PLACEHOLDER.
 
 Usage:
-  extract_stt.py <bv_id_or_url>  [--force]
+  extract_stt.py (any arguments; currently ignored)
 
-Status: NOT IMPLEMENTED. Returns fallback instructions for the model.
+Status: NOT IMPLEMENTED. Prints fallback instructions for the model.
 When implemented, will:
   1. Check if audio already cached (extract_audio.py)
   2. If not, extract audio from video
@@ -16,6 +16,9 @@ For now: tells the model to fall back to visual analysis (extract_frames.py).
 """
 
 import sys
+
+# Consume all arguments silently — script is a placeholder
+_ = sys.argv[1:]
 
 print("[STT] 本地语音转写尚未实现。")
 print("[STT] 降级方案：使用抽帧进行视觉分析。")
