@@ -22,24 +22,11 @@ import json
 import yaml
 
 from pathlib import Path
-import sys
 sys.path.insert(0, str(Path(__file__).parent))
-from config import CACHE_DIR
-RESOLVE_SCRIPT = Path(__file__).parent / "resolve_video_id.py"
-SPLIT_THRESHOLD = 3000  # chars: above this, auto-split for subagent processing
-CHUNK_SIZE = 1500        # chars per chunk when splitting
+from config import CACHE_DIR, resolve_id
 
-
-def resolve_bv_id(raw: str) -> str:
-    result = subprocess.run(
-        [sys.executable, str(RESOLVE_SCRIPT), raw],
-        capture_output=True, text=True, timeout=15
-    )
-    if result.returncode != 0:
-        print(result.stderr, file=sys.stderr)
-        sys.exit(1)
-    return result.stdout.strip().split()[0]
-
+SPLIT_THRESHOLD = 3000
+CHUNK_SIZE = 1500
 
 def fetch_subtitle_srt(bv_id: str) -> dict:
     """Fetch subtitle via bili CLI. Returns parsed YAML."""
@@ -122,86 +109,51 @@ def _extract_timestamp(line: str) -> str:
 
 def main():
     if len(sys.argv) < 2:
-        print(__doc__)
-        sys.exit(1)
+        print(__doc__); sys.exit(1)
 
-    raw_input = sys.argv[1]
+    bv_id = resolve_id(sys.argv[1])
     force = "--force" in sys.argv
-    as_json = "--json" in sys.argv
-
-    bv_id = resolve_bv_id(raw_input)
     cache_dir = CACHE_DIR / bv_id
     cache_dir.mkdir(parents=True, exist_ok=True)
     srt_file = cache_dir / "subtitle.platform.srt"
+    compressed = cache_dir / "subtitle.compressed.md"
 
-    # Check cache
+    # Cache hit: already have subtitles
     if not force and srt_file.exists():
         cached_text = srt_file.read_text().strip()
         if cached_text and cached_text != "[NO SUBTITLE]":
-            # Already have it. Check if compressed version exists.
-            compressed = cache_dir / "subtitle.compressed.md"
             if compressed.exists():
-                if as_json:
-                    print(json.dumps({"status": "cached", "compressed": str(compressed),
-                                      "raw": str(srt_file), "chars": len(cached_text)},
-                                     ensure_ascii=False))
-                else:
-                    print(f"[CACHE: HIT] [COMPRESSED: {compressed}]")
-                    print(f"[RAW: {srt_file}] ({len(cached_text)} chars)")
+                print(f"[CACHE: HIT] [COMPRESSED: {compressed}]")
+                print(f"[RAW: {srt_file}] ({len(cached_text)} chars)")
                 return
-            elif len(cached_text) <= SPLIT_THRESHOLD:
-                # Small enough to return directly
-                if as_json:
-                    print(json.dumps({"status": "cached", "raw": str(srt_file),
-                                      "chars": len(cached_text)}, ensure_ascii=False))
-                else:
-                    print(f"[CACHE: HIT] ({len(cached_text)} chars)")
-                    print(cached_text[:SPLIT_THRESHOLD])
-                    if len(cached_text) > SPLIT_THRESHOLD:
-                        print(f"... [truncated at {SPLIT_THRESHOLD} chars, full: {srt_file}]")
+            if len(cached_text) <= SPLIT_THRESHOLD:
+                print(f"[CACHE: HIT] ({len(cached_text)} chars)")
+                print(cached_text[:SPLIT_THRESHOLD])
                 return
-            else:
-                # Large but needs re-split (chunks may have been cleaned)
-                pass
 
     # Fetch from bili CLI
     sub_data = fetch_subtitle_srt(bv_id)
-
     if not sub_data.get("available"):
         srt_file.write_text("[NO SUBTITLE]")
-        if as_json:
-            print(json.dumps({"status": "no_subtitle"}, ensure_ascii=False))
-        else:
-            print("[NO SUBTITLE]")
+        print("[NO SUBTITLE]")
         return
 
     text = subtitle_to_text_with_timestamps(sub_data)
     srt_file.write_text(text)
-    chars = len(text)
 
-    if chars <= SPLIT_THRESHOLD:
-        # Small: return content directly
-        if as_json:
-            print(json.dumps({"status": "ok", "raw": str(srt_file), "chars": chars},
-                             ensure_ascii=False))
-        else:
-            print(f"[CACHE: MISS] ({chars} chars)")
-            print(text)
-            print(f"[CACHED: {srt_file}]")
+    if len(text) <= SPLIT_THRESHOLD:
+        print(f"[CACHE: MISS] ({len(text)} chars)")
+        print(text)
+        print(f"[CACHED: {srt_file}]")
         return
 
-    # Large: split into chunks, return paths for subagent processing
+    # Large: split into chunks
     chunks = split_into_chunks(text, cache_dir)
-    if as_json:
-        print(json.dumps({"status": "split", "chunks": chunks, "raw": str(srt_file),
-                          "total_chars": chars}, ensure_ascii=False, indent=2))
-    else:
-        print(f"[SPLIT] {len(chunks)} chunks (total {chars} chars)")
-        for c in chunks:
-            print(f"  [{c['start']}-{c['end']}] {c['chars']} chars → {c['path']}")
-        print(f"\n[RAW: {srt_file}]")
-        print(f"[ACTION] Delegate each chunk to subagent for compression.")
-        print(f"[ACTION] Save merged result to: {cache_dir / 'subtitle.compressed.md'}")
+    print(f"[SPLIT] {len(chunks)} chunks (total {len(text)} chars)")
+    for c in chunks:
+        print(f"  [{c['start']}-{c['end']}] {c['chars']} chars → {c['path']}")
+    print(f"[RAW: {srt_file}]")
+    print(f"[ACTION] Compress each chunk in parallel, save to: {compressed}")
 
 
 if __name__ == "__main__":

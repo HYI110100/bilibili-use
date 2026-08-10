@@ -12,21 +12,8 @@ import subprocess
 import sys
 
 from pathlib import Path
-import sys
 sys.path.insert(0, str(Path(__file__).parent))
-from config import CACHE_DIR
-RESOLVE_SCRIPT = Path(__file__).parent / "resolve_video_id.py"
-
-
-def resolve_bv_id(raw: str) -> str:
-    result = subprocess.run(
-        [sys.executable, str(RESOLVE_SCRIPT), raw],
-        capture_output=True, text=True, timeout=15
-    )
-    if result.returncode != 0:
-        print(result.stderr, file=sys.stderr)
-        sys.exit(1)
-    return result.stdout.strip().split()[0]
+from config import CACHE_DIR, resolve_id
 
 
 def main():
@@ -37,7 +24,7 @@ def main():
     raw_input = sys.argv[1]
     force = "--force" in sys.argv
 
-    bv_id = resolve_bv_id(raw_input)
+    bv_id = resolve_id(raw_input)
     cache_dir = CACHE_DIR / bv_id
     cache_dir.mkdir(parents=True, exist_ok=True)
     cache_file = cache_dir / "ai_summary.md"

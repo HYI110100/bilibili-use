@@ -19,28 +19,8 @@ import json
 import time
 
 from pathlib import Path
-import sys
 sys.path.insert(0, str(Path(__file__).parent))
-from config import CACHE_DIR
-RESOLVE_SCRIPT = Path(__file__).parent / "resolve_video_id.py"
-
-
-def resolve_bv_id(raw: str) -> str:
-    result = subprocess.run(
-        [sys.executable, str(RESOLVE_SCRIPT), raw],
-        capture_output=True, text=True, timeout=15
-    )
-    if result.returncode != 0:
-        print(result.stderr, file=sys.stderr)
-        sys.exit(1)
-    return result.stdout.strip().split()[0]
-
-
-def check_tools():
-    for tool in ["yt-dlp", "ffmpeg"]:
-        if subprocess.run(["which", tool], capture_output=True).returncode != 0:
-            print(f"[ERROR] {tool} not found.", file=sys.stderr)
-            sys.exit(1)
+from config import CACHE_DIR, resolve_id
 
 
 def get_stream_url(bv_id: str) -> str:
@@ -108,9 +88,8 @@ def main():
         print("[ERROR] --at required (comma-separated seconds)", file=sys.stderr)
         sys.exit(1)
 
-    check_tools()
 
-    bv_id = resolve_bv_id(raw_input)
+    bv_id = resolve_id(raw_input)
     frames_dir = CACHE_DIR / bv_id / "frames"
     frames_dir.mkdir(parents=True, exist_ok=True)
 
