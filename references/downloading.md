@@ -2,11 +2,14 @@
 
 > **需要从B站获取任何资源（字幕、音频、帧、视频文件、AI摘要、评论、元数据）
 > ——本文档管怎么拿。其他 reference（watching、browsing、publishing）只管决定拿什么。**
+> （browsing / publishing 规划中，尚未实现）
 
 ## 可用脚本
 
 | 脚本 | 获取 | 缓存 | 输出 |
 |---|---|---|---|
+| `resolve_video_id.py` | 解析链接→统一ID | 永久 | YAML：type, bv_id, page, cache_dir |
+| `config.py` | 共享配置（缓存路径、ID解析） | N/A | 被其他脚本 import，不单独运行 |
 | `get_video_info.py` | 元数据 YAML | 24h TTL | YAML 文本或 `[CACHE: HIT]` |
 | `get_subtitle.py` | 平台字幕 | 永久 | 短：内容。长：`[SPLIT]` 分段路径 |
 | `get_ai_summary.py` | B站 AI 摘要 | 永久 | ~100-300 字文本 |
@@ -27,16 +30,22 @@ python3 scripts/cleanup_cache.py
 不要思考，不要判断是否需要。在任何内容获取前无脑执行。
 脚本自动删除超过 7 天的视频 .mp4 文件，保留字幕、帧和元数据。
 
-## 脚本调用
+### 解析链接（最先执行）
+```bash
+python3 scripts/resolve_video_id.py <url>
+# → 输出 YAML：type, bv_id, page, cache_dir, index_path
+# → type=single/multi_p/collection
+# 后续所有脚本都加 --cache-dir <cache_dir>
+```
 
 ### 元数据（始终最先）
 ```bash
-python3 scripts/get_video_info.py <bv_id>
+python3 scripts/get_video_info.py <bv_id> --cache-dir <cache_dir>
 ```
 
 ### 字幕
 ```bash
-python3 scripts/get_subtitle.py <bv_id>
+python3 scripts/get_subtitle.py <bv_id> --cache-dir <cache_dir>
 # 短字幕 → 直接返回内容，读完
 # [SPLIT] → 返回分段 → 并行压缩（见 watching.md）
 # [NO SUBTITLE] → 降级到 --ai 或抽帧
@@ -44,13 +53,13 @@ python3 scripts/get_subtitle.py <bv_id>
 
 ### AI 摘要（无字幕时）
 ```bash
-python3 scripts/get_ai_summary.py <bv_id>
+python3 scripts/get_ai_summary.py <bv_id> --cache-dir <cache_dir>
 ```
 
 ### 评论
 ```bash
-python3 scripts/get_comments.py <bv_id> --mode hot
-python3 scripts/get_comments.py <bv_id> --mode latest
+python3 scripts/get_comments.py <bv_id> --cache-dir <cache_dir> --mode hot
+python3 scripts/get_comments.py <bv_id> --cache-dir <cache_dir> --mode latest
 ```
 
 ### 抽帧时间点
@@ -61,19 +70,19 @@ python3 scripts/compute_timestamps.py --duration <seconds>
 
 ### 流式抽帧
 ```bash
-python3 scripts/extract_frames.py <bv_id> --at 10,45,120
+python3 scripts/extract_frames.py <bv_id> --cache-dir <cache_dir> --at 10,45,120
 # ~0.5s/帧，走 yt-dlp -g + ffmpeg -ss
 ```
 
 ### 提取音频（用于 ASR）
 ```bash
-python3 scripts/extract_audio.py <bv_id> --segment 25
+python3 scripts/extract_audio.py <bv_id> --cache-dir <cache_dir> --segment 25
 # → WAV 分段，ASR 就绪
 ```
 
 ### 下载完整视频
 ```bash
-python3 scripts/download_video.py <bv_id> --quality 1080p
+python3 scripts/download_video.py <bv_id> --cache-dir <cache_dir> --quality 1080p
 # 用户明确要求保存文件时才用
 ```
 
@@ -89,7 +98,7 @@ python3 scripts/html_to_png.py <html文件>
 ~/.cache/bilibili-use/
 │
 ├── <bv_id>/                  # 单视频 / 多P的根
-│   ├── resolve.yaml          # 类型: single/multi_p
+│   ├── resolve.yaml          # 类型: single/multi_p/collection
 │   ├── metadata.yaml         # 24h TTL
 │   ├── subtitle.platform.srt # 永久（B站原始字幕）
 │   ├── subtitle.compressed.md# 压缩版

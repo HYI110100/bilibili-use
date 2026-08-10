@@ -50,7 +50,7 @@ B站平台使用技能。**不是 CLI 命令手册**（那在 `bilibili-cli` ski
 │   ├── comments_latest.yaml  # 最新评论（1h TTL）
 │   ├── audio/                # 音频分段
 │   ├── frames/               # 流式抽帧
-│   ├── video_1080p.mp4       # 完整视频
+│   ├── video_1080p.mp4       # 完整视频（7天 TTL）
 │   │
 │   ├── p1/                   # 多P视频第1P（结构同上）
 │   ├── p2/                   # 多P视频第2P
@@ -84,4 +84,5 @@ B站平台使用技能。**不是 CLI 命令手册**（那在 `bilibili-cli` ski
 - 字幕超长 → `get_subtitle.py` 自动拆分 → 并行压缩各段 → 只看压缩结果
 - 多步骤操作时保持进度跟踪（按平台的 task/todo 机制）
 - 获取的帧图片用于自己的视觉分析：用平台的图片/截图分析能力看（模型无原生视觉时走辅助视觉模型），不是给用户预览的素材。视觉工具不可用才跳过
+- 多P真实标题/时长依赖 `bilibili-api`，未装时自动降级（当前解释器 → bili CLI 环境 → 占位标题），详见 AGENTS.md
 - markmap 思维导图生成前需加载其 skill 文档

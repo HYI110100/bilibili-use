@@ -11,7 +11,7 @@ AI agent 使用本技能前需准备的环境。
 ### 安装本技能
 
 ```bash
-npx skills add <your-username>/bilibili-use --global
+npx skills add HYI110100/bilibili-use --global
 ```
 
 ### CLI 工具
@@ -122,8 +122,8 @@ bilibili-use/
 ```
 用户发 B站链接
   → SKILL.md 路由到 summarizing.md（默认闲聊模式）
-    → 内部先调 watching.md（三阶段分析流程）
-      → 需要资源时调 downloading.md（12个脚本）
+    → 内部先调 watching.md（四阶段分析流程：解析 → 收集 → 分析 → 补充）
+      → 需要资源时调 downloading.md（13个脚本）
     → 最终输出：闲聊 / 速览 / 文章 / 思维导图
 ```
 

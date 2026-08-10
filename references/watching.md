@@ -17,6 +17,7 @@
   → 输出 YAML：type, bv_id, page, cache_dir, index_path
   → type=single: 普通视频，cache_dir=.../BV1xx/
   → type=multi_p: 多P视频，cache_dir=.../BV1xx/pN/
+  → type=collection: 合集，cache_dir=.../<sid>/<bv_id>/
   → 同时生成 index.yaml（多P列表）和 resolve.yaml（元信息）
 ```
 

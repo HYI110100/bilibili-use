@@ -23,23 +23,27 @@ B站视频消费的行为指导层。基于成熟的开源工具，编排出一�
 ## 安装
 
 ```bash
-# 安装本技能（替换 <username> 为你的 GitHub 用户名）
-npx skills add <username>/bilibili-use --global
+# 安装本技能
+npx skills add HYI110100/bilibili-use --global
 
 # 依赖的 CLI 工具
 uv tool install bilibili-cli
 uv tool install yt-dlp
 npm install -g markmap-cli
+apt install ffmpeg              # 音视频处理 / 抽帧
 
 # Python 包
 pip install pyyaml playwright
 python -m playwright install chromium   # html_to_png.py 需要
 
+# 可选：多P真实标题（未装则自动降级为占位标题）
+pip install bilibili-api
+
 # B站登录（下载高清需要）
 bili login
 ```
 
-系统需 `python3` 和 `ffmpeg`。
+系统需 `python3`。
 
 ## 使用
 
