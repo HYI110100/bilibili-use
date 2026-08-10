@@ -31,6 +31,7 @@ B站平台使用技能。**不是 CLI 命令手册**（那在 `bilibili-cli` ski
 | `scripts/html_to_png.py` | HTML 转 PNG（思维导图输出用） |
 | `scripts/download_video.py` | 下载完整视频文件 |
 | `scripts/cleanup_cache.py` | 缓存清理（每次操作前自动执行） |
+| `scripts/config.py` | 共享配置（缓存路径、ID 解析）——所有脚本的基础设施 |
 | `yt-dlp` | 下载/流媒体直链/多P检测（兜底） |
 
 ## 缓存约定
@@ -82,5 +83,5 @@ B站平台使用技能。**不是 CLI 命令手册**（那在 `bilibili-cli` ski
 - 抽帧走流式（`yt-dlp -g` + `ffmpeg -ss`），不下载完整视频
 - 字幕超长 → `get_subtitle.py` 自动拆分 → 并行压缩各段 → 只看压缩结果
 - 多步骤操作时保持进度跟踪（按平台的 task/todo 机制）
-- 获取的帧图片用于自己的视觉分析，不是给用户看的素材
+- 获取的帧图片用于自己的视觉分析：用平台的图片/截图分析能力看（模型无原生视觉时走辅助视觉模型），不是给用户预览的素材。视觉工具不可用才跳过
 - markmap 思维导图生成前需加载其 skill 文档
