@@ -105,3 +105,12 @@ AI总结:
   `cat <cache_dir>/../index.yaml`
 - 用户要求处理全部时：读 index.yaml → 拆子代理，每个子代理处理一P
 - 下载其他P：`yt-dlp -I <N> https://www.bilibili.com/video/<bv_id>`
+
+## 合集视频
+
+如果 resolve 返回 `type: collection`：
+- 默认处理第一个视频，cache_dir 指向 `.../<sid>/<bv_id>/`
+- index.yaml 包含合集全部视频（bv_id、标题、时长）
+- 警告用户合集有 N 个视频，只处理第一个
+- 用户要求处理全部时：读 index.yaml → 拆子代理，每个子代理处理一个 bv_id
+  （每个视频的 cache_dir = `.../<sid>/<bv_id>/`）

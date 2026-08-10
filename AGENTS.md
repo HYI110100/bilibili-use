@@ -112,9 +112,9 @@ bilibili-use/
 │   ├── p2/                   # 第2P
 │   └── index.yaml            # 多P列表
 │
-└── <collection_id>/          # 合集（规划中）
-    ├── index.yaml
-    └── <bv_id>/ ...
+└── <collection_id>/          # 合集（sid）
+    ├── index.yaml            # 合集视频列表（bv_id, title, duration_s）
+    └── <bv_id>/              # 每个视频一个目录（结构同上）
 ```
 
 ## 工作流

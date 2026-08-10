@@ -105,9 +105,9 @@ python3 scripts/html_to_png.py <html文件>
 │   ├── p2/                   # 第2P
 │   └── index.yaml            # 多P列表（page, title, duration_s）
 │
-└── <collection_id>/          # 合集（规划中）
-    ├── index.yaml
-    └── <bv_id>/ ...
+└── <collection_id>/          # 合集（sid）
+    ├── index.yaml            # 合集视频列表（bv_id, title, duration_s）
+    └── <bv_id>/              # 每个视频一个目录（结构同上）
 ```
 
 ## 画质与 Cookies

@@ -19,7 +19,7 @@ B站平台使用技能。**不是 CLI 命令手册**（那在 `bilibili-cli` ski
 | 工具 | 用途 |
 |---|---|
 | `bili` CLI | 底层命令行（官方 skill `bilibili-cli` 教用法） |
-| `scripts/resolve_video_id.py` | 解析各种链接/ID（BV/AV/ep/b23.tv） |
+| `scripts/resolve_video_id.py` | 解析链接/ID，识别单视频/多P/合集，建缓存目录 |
 | `scripts/get_video_info.py` | 获取视频元数据 + 检测多P |
 | `scripts/get_subtitle.py` | 获取字幕，超长自动拆分（返回路径，不返回内容） |
 | `scripts/get_ai_summary.py` | 获取 B站 AI 总结（段落摘要） |
@@ -55,9 +55,9 @@ B站平台使用技能。**不是 CLI 命令手册**（那在 `bilibili-cli` ski
 │   ├── p2/                   # 多P视频第2P
 │   └── index.yaml            # 多P列表（page, title, duration_s）
 │
-└── <collection_id>/          # 合集（规划中）
-    ├── index.yaml
-    └── <bv_id>/ ...
+└── <collection_id>/          # 合集（sid）
+    ├── index.yaml            # 合集视频列表（bv_id, title, duration_s）
+    └── <bv_id>/              # 每个视频一个目录（结构同上）
 ```
 
 所有 `scripts/*.py` 自动遵循：先查缓存 → 未命中才调 CLI/yt-dlp → 结果写缓存。

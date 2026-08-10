@@ -231,11 +231,22 @@ def write_resolve(cache_dir: Path, bv_id: str, page: int, vtype: str, original: 
 
 
 def parse_input(raw: str) -> dict:
-    """Parse raw input into {bv_id, page, timestamp}."""
+    """Parse raw input into video or collection descriptor.
+
+    Returns video:  {type: 'video', bv_id, page, timestamp}
+    Returns collection: {type: 'collection', mid, sid}
+    """
     raw = raw.strip()
 
     if "b23.tv" in raw:
         raw = follow_redirect(raw)
+
+    # Collection URLs:
+    #   space.bilibili.com/<mid>/channel/collectiondetail?sid=<sid>
+    #   space.bilibili.com/<mid>/lists/<sid>
+    col = re.search(r"space\.bilibili\.com/(\d+)/(?:channel/collectiondetail\?sid=|lists/)(\d+)", raw)
+    if col:
+        return {"type": "collection", "mid": int(col.group(1)), "sid": int(col.group(2))}
 
     page = 1
     timestamp = 0
@@ -245,7 +256,105 @@ def parse_input(raw: str) -> dict:
         timestamp = int(qs.get("t", [0])[0])
 
     bv_id = resolve_id(raw)
-    return {"bv_id": bv_id, "page": page, "timestamp": timestamp}
+    return {"type": "video", "bv_id": bv_id, "page": page, "timestamp": timestamp}
+
+
+# ---------- Collection support ----------
+
+def get_collection_rich(sid: int) -> dict | None:
+    """Get collection info via bilibili_api with fallback chain.
+
+    Returns {title, total, items: [{bv_id, title, duration_s}]} or None.
+    """
+    try:
+        import asyncio
+        from bilibili_api import user
+
+        async def _fetch():
+            u = user.User(0)  # mid not needed for season query
+            data = await u.get_channel_videos_season(sid=sid, ps=100)
+            return data
+
+        data = asyncio.run(_fetch())
+    except Exception:
+        # Fallback: bili CLI interpreter
+        bili_py = _find_bili_cli_python()
+        if not bili_py:
+            return None
+        code = (
+            "import asyncio, json, sys\n"
+            "from bilibili_api import user\n"
+            "async def main():\n"
+            "    u = user.User(0)\n"
+            "    data = await u.get_channel_videos_season(sid=sys.argv[1], ps=100)\n"
+            "    print(json.dumps(data, ensure_ascii=False))\n"
+            "asyncio.run(main())\n"
+        )
+        result = subprocess.run([bili_py, "-c", code, str(sid)],
+                                capture_output=True, text=True, timeout=30)
+        if result.returncode != 0:
+            return None
+        try:
+            data = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            return None
+
+    meta = data.get("meta", {})
+    archives = data.get("archives", [])
+    if not archives:
+        return None
+
+    items = [{
+        "bv_id": v.get("bvid", ""),
+        "title": v.get("title", f"V{i + 1}"),
+        "duration_s": v.get("duration") or 0,
+    } for i, v in enumerate(archives)]
+
+    return {
+        "title": meta.get("name", meta.get("title", "")),
+        "total": len(items),
+        "items": items,
+    }
+
+
+def get_collection_degraded(sid: int) -> dict | None:
+    """Fallback: collection items via yt-dlp flat-playlist (bvid only)."""
+    url = f"https://space.bilibili.com/0/channel/collectiondetail?sid={sid}"
+    result = subprocess.run(
+        ["yt-dlp", "--flat-playlist", "--dump-json", url],
+        capture_output=True, text=True, timeout=15
+    )
+    if result.returncode != 0:
+        return None
+    items = []
+    for line in result.stdout.strip().split("\n"):
+        try:
+            d = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        bv = d.get("id", "")
+        if bv:
+            items.append({"bv_id": bv, "title": f"V{len(items) + 1}", "duration_s": 0})
+    if not items:
+        return None
+    return {"title": f"合集{sid}", "total": len(items), "items": items}
+
+
+def build_collection_index(sid: int, col: dict) -> Path:
+    """Generate index.yaml for collection. Returns path."""
+    index_dir = CACHE_DIR / str(sid)
+    index_dir.mkdir(parents=True, exist_ok=True)
+    index_path = index_dir / "index.yaml"
+
+    index_data = {
+        "type": "collection",
+        "id": sid,
+        "title": col.get("title", ""),
+        "total": col["total"],
+        "items": col["items"],
+    }
+    index_path.write_text(yaml.dump(index_data, allow_unicode=True, default_flow_style=False))
+    return index_path
 
 
 def main():
@@ -255,6 +364,40 @@ def main():
 
     raw = sys.argv[1]
     parsed = parse_input(raw)
+
+    # ---------- Collection branch ----------
+    if parsed["type"] == "collection":
+        sid = parsed["sid"]
+        # Try real titles via bilibili_api, degrade to yt-dlp bvid list
+        col = get_collection_rich(sid) or get_collection_degraded(sid)
+        if not col or not col["items"]:
+            print(f"[ERROR] Cannot fetch collection {sid}", file=sys.stderr)
+            sys.exit(1)
+
+        index_path = build_collection_index(sid, col)
+
+        # Default: process first video in collection
+        first = col["items"][0]
+        bv_id = first["bv_id"]
+        cache_dir = CACHE_DIR / str(sid) / bv_id
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        write_resolve(cache_dir, bv_id, 1, "collection", raw)
+
+        output = {
+            "type": "collection",
+            "collection_id": sid,
+            "title": col.get("title", ""),
+            "bv_id": bv_id,
+            "page": 1,
+            "cache_dir": str(cache_dir),
+            "index_path": str(index_path),
+            "total_videos": col["total"],
+        }
+        print(yaml.dump(output, allow_unicode=True, default_flow_style=False))
+        print(f"[COLLECTION] {col.get('title', '')} → {col['total']} videos")
+        return
+
+    # ---------- Video branch ----------
     bv_id = parsed["bv_id"]
     page = parsed["page"]
 
