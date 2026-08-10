@@ -23,7 +23,7 @@ import yaml
 
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
-from config import CACHE_DIR, resolve_id
+from config import resolve_cache_dir, read_resolve
 
 SPLIT_THRESHOLD = 3000
 CHUNK_SIZE = 1500
@@ -111,10 +111,15 @@ def main():
     if len(sys.argv) < 2:
         print(__doc__); sys.exit(1)
 
-    bv_id = resolve_id(sys.argv[1])
+    raw_input = sys.argv[1]
     force = "--force" in sys.argv
-    cache_dir = CACHE_DIR / bv_id
+    cache_dir = resolve_cache_dir(raw_input, sys.argv)
     cache_dir.mkdir(parents=True, exist_ok=True)
+
+    # Resolve bv_id for API call
+    r = read_resolve(cache_dir)
+    from config import resolve_id
+    bv_id = r.get("bv_id") or resolve_id(raw_input)
     srt_file = cache_dir / "subtitle.platform.srt"
     compressed = cache_dir / "subtitle.compressed.md"
 

@@ -20,7 +20,7 @@ import time
 
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
-from config import CACHE_DIR, resolve_id
+from config import resolve_cache_dir, read_resolve
 
 
 def get_stream_url(bv_id: str) -> str:
@@ -88,9 +88,8 @@ def main():
         print("[ERROR] --at required (comma-separated seconds)", file=sys.stderr)
         sys.exit(1)
 
-
-    bv_id = resolve_id(raw_input)
-    frames_dir = CACHE_DIR / bv_id / "frames"
+    cache_dir = resolve_cache_dir(raw_input, sys.argv)
+    frames_dir = cache_dir / "frames"
     frames_dir.mkdir(parents=True, exist_ok=True)
 
     try:
@@ -98,6 +97,11 @@ def main():
     except ValueError:
         print("[ERROR] Invalid timestamps. Use: --at 10,45.5,120", file=sys.stderr)
         sys.exit(1)
+
+    # Resolve bv_id for stream URL
+    r = read_resolve(cache_dir)
+    from config import resolve_id
+    bv_id = r.get("bv_id") or resolve_id(raw_input)
 
     # Check cache
     results = []

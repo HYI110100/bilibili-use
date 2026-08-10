@@ -13,7 +13,7 @@ import sys
 
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
-from config import CACHE_DIR, resolve_id
+from config import resolve_cache_dir, read_resolve
 
 
 def main():
@@ -24,8 +24,7 @@ def main():
     raw_input = sys.argv[1]
     force = "--force" in sys.argv
 
-    bv_id = resolve_id(raw_input)
-    cache_dir = CACHE_DIR / bv_id
+    cache_dir = resolve_cache_dir(raw_input, sys.argv)
     cache_dir.mkdir(parents=True, exist_ok=True)
     cache_file = cache_dir / "ai_summary.md"
 
@@ -36,6 +35,11 @@ def main():
             print(cached)
             print(f"[CACHED: {cache_file}]")
             return
+
+    # Resolve bv_id for API call
+    r = read_resolve(cache_dir)
+    from config import resolve_id
+    bv_id = r.get("bv_id") or resolve_id(raw_input)
 
     result = subprocess.run(
         ["bili", "video", bv_id, "--ai", "--yaml"],

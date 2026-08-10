@@ -80,18 +80,27 @@ bilibili-use/
 
 ```
 ~/.cache/bilibili-use/
-└── <bv_id>/
-    ├── resolve.json            # 链接解析结果
-    ├── metadata.yaml           # 24h TTL
-    ├── subtitle.platform.srt   # 永久
-    ├── subtitle.compressed.md  # 永久
-    ├── chunks/                 # 超长字幕拆分片段
-    ├── ai_summary.md           # 永久
-    ├── comments.yaml           # 6h/1h TTL
-    ├── audio/                  # WAV 分段
-    ├── frames/                 # JPG 帧
-    ├── video_*.mp4             # 完整视频（7天自动清理）
-    └── p<N>/                   # 多P视频第2P起，结构同上
+│
+├── <bv_id>/                  # 单视频 / 多P的根
+│   ├── resolve.yaml          # 视频类型、解析结果
+│   ├── metadata.yaml         # 24h TTL
+│   ├── subtitle.platform.srt # 永久
+│   ├── subtitle.compressed.md# 永久
+│   ├── chunks/               # 超长字幕拆分片段
+│   ├── ai_summary.md         # 永久
+│   ├── comments_hot.yaml     # 6h TTL
+│   ├── comments_latest.yaml  # 1h TTL
+│   ├── audio/                # WAV 分段
+│   ├── frames/               # JPG 帧
+│   ├── video_*.mp4           # 7天自动清理
+│   │
+│   ├── p1/                   # 多P视频第1P（结构同上）
+│   ├── p2/                   # 第2P
+│   └── index.yaml            # 多P列表
+│
+└── <collection_id>/          # 合集（规划中）
+    ├── index.yaml
+    └── <bv_id>/ ...
 ```
 
 ## 工作流

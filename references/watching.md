@@ -7,20 +7,33 @@
 
 ## 流程
 
-三阶段：收集 → 分析 → 补充。
+四阶段：解析 → 收集 → 分析 → 补充。
+
+### 阶段零：解析（识别视频类型、建立缓存目录）
+
+```
+第0步: 解析链接
+  python3 scripts/resolve_video_id.py <url>
+  → 输出 YAML：type, bv_id, page, cache_dir, index_path
+  → type=single: 普通视频，cache_dir=.../BV1xx/
+  → type=multi_p: 多P视频，cache_dir=.../BV1xx/pN/
+  → 同时生成 index.yaml（多P列表）和 resolve.yaml（元信息）
+```
+
+后续所有脚本都加 `--cache-dir <cache_dir>` 指向 resolve 返回的目录。
 
 ### 阶段一：收集（并行获取所有可用内容）
 
 ```
 第1步: 元数据
-  python3 scripts/get_video_info.py <bv_id>
+  python3 scripts/get_video_info.py <bv_id> --cache-dir <cache_dir>
   → 标题、时长、作者、数据、多P 警告
 
 第2步: 并行拉取字幕、AI总结、评论（三者互不依赖，同时进行）
-  python3 scripts/get_subtitle.py <bv_id>
-  python3 scripts/get_ai_summary.py <bv_id>
-  python3 scripts/get_comments.py <bv_id> --mode hot
-  python3 scripts/get_comments.py <bv_id> --mode latest
+  python3 scripts/get_subtitle.py <bv_id> --cache-dir <cache_dir>
+  python3 scripts/get_ai_summary.py <bv_id> --cache-dir <cache_dir>
+  python3 scripts/get_comments.py <bv_id> --cache-dir <cache_dir> --mode hot
+  python3 scripts/get_comments.py <bv_id> --cache-dir <cache_dir> --mode latest
 
   → 字幕可能无、AI总结可能空、评论可能少——都先拿到手再说
 ```
@@ -56,7 +69,7 @@ AI总结:
 
 需要视觉（字幕差/无/废话）：
   python3 scripts/compute_timestamps.py --duration <seconds>
-  python3 scripts/extract_frames.py <bv_id> --at <timestamps>
+  python3 scripts/extract_frames.py <bv_id> --cache-dir <cache_dir> --at <timestamps>
   逐帧看图，分析画面内容，融入理解
 
 需要 STT（字幕无但需要理解口播内容）：
@@ -84,8 +97,11 @@ AI总结:
 
 ## 多P 视频
 
-如果元数据显示 `[MULTI-P: N pages]`：
-- 警告用户，只处理第1P
+如果 resolve 返回 `type: multi_p`：
+- 默认只处理当前页（page=1），cache_dir 指向 `p1/`
+- 警告用户有 N 个分P，只处理第1P
+- index.yaml 包含全部 P 的列表（标题、时长）
 - 列出全部分P标题：
-  `yt-dlp --flat-playlist --print title https://www.bilibili.com/video/<bv_id>`
+  `cat <cache_dir>/../index.yaml`
+- 用户要求处理全部时：读 index.yaml → 拆子代理，每个子代理处理一P
 - 下载其他P：`yt-dlp -I <N> https://www.bilibili.com/video/<bv_id>`

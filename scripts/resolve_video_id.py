@@ -1,37 +1,39 @@
 #!/usr/bin/env python3
-"""Resolve any B站 link/ID to canonical ID + cache path.
+"""Resolve any B站 link/ID to canonical ID, cache path, and video type.
 
 Usage:
   resolve_video_id.py <input>            # BV ID, URL, or short link
-  resolve_video_id.py BV1xxx --json      # JSON output
+  resolve_video_id.py <input> --yaml     # YAML output (default)
 
-Supported formats:
-  - BV ID:      BV1ABcsztEcY
-  - AV ID:      av21877586
-  - Episode:    ep198381
-  - Full URL:   https://www.bilibili.com/video/BV1ABcsztEcY?p=2
-  - Short link: https://b23.tv/xxxxx
+Detects:
+  - single:   普通单视频
+  - multi_p:  多P视频（同一 BV 下有多个分P）
+  - collection: 合集（未来支持）
 
-Output (default text):
-  BV_ID [pN] [TIMESTAMP]
+Cache structure:
+  single:        ~/.cache/bilibili-use/<bv_id>/
+  multi_p:       ~/.cache/bilibili-use/<bv_id>/p<N>/
+  collection:    ~/.cache/bilibili-use/<col_id>/<bv_id>/
 
-Output (--json):
-  {"bv_id": "BV1xxx", "page": 1, "timestamp": 0,
-   "cache_dir": "~/.cache/bilibili-use/BV1xxx/",
-   "multi_p": false, "collection": null}
+Output (YAML):
+  type: single|multi_p
+  bv_id: BV1xxx
+  page: 1
+  cache_dir: /home/hyi/.cache/bilibili-use/...
+  index_path: /home/hyi/.cache/bilibili-use/.../index.yaml  (multi_p only)
 """
 
 import subprocess
 import sys
 import json
+import yaml
 import re
 import urllib.request
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
-# Import shared cache config
 sys.path.insert(0, str(Path(__file__).parent))
-from config import CACHE_DIR
+from config import CACHE_DIR, resolve_id
 
 
 def follow_redirect(url: str, timeout: int = 10) -> str:
@@ -45,8 +47,23 @@ def follow_redirect(url: str, timeout: int = 10) -> str:
         sys.exit(1)
 
 
+def get_total_duration(bv_id: str) -> int:
+    """Get total video duration in seconds via bili CLI."""
+    result = subprocess.run(
+        ["bili", "video", bv_id, "--yaml"],
+        capture_output=True, text=True, timeout=30
+    )
+    if result.returncode != 0:
+        return 0
+    try:
+        data = yaml.safe_load(result.stdout)
+        return data.get("data", {}).get("video", {}).get("duration_seconds", 0)
+    except Exception:
+        return 0
+
+
 def detect_playlist(bv_id: str) -> dict:
-    """Check if video is multi-P or collection via yt-dlp."""
+    """Check if video is multi-P via yt-dlp flat playlist."""
     url = f"https://www.bilibili.com/video/{bv_id}"
     result = subprocess.run(
         ["yt-dlp", "--flat-playlist", "--dump-json", url],
@@ -54,20 +71,89 @@ def detect_playlist(bv_id: str) -> dict:
     )
     if result.returncode != 0:
         return {}
-    try:
-        data = json.loads(result.stdout.strip().split("\n")[0])
-        if data.get("playlist_count", 0) > 1:
-            return {
-                "playlist_id": data.get("playlist_id", bv_id),
-                "playlist_count": data["playlist_count"],
-                "playlist_title": data.get("playlist_title", ""),
-            }
-    except (json.JSONDecodeError, KeyError):
-        pass
-    return {}
+
+    lines = result.stdout.strip().split("\n")
+    entries = []
+    for line in lines:
+        try:
+            entries.append(json.loads(line))
+        except json.JSONDecodeError:
+            pass
+
+    if not entries:
+        return {}
+
+    first = entries[0]
+    count = first.get("playlist_count", 0) or first.get("n_entries", 0) or len(entries)
+
+    if count <= 1 and len(entries) <= 1:
+        return {}
+
+    # Get total duration for per-page estimate
+    total_duration = get_total_duration(bv_id)
+    per_page = total_duration // count if count > 0 else 0
+
+    items = []
+    for i in range(count):
+        items.append({
+            "page": i + 1,
+            "title": f"P{i + 1}",
+            "duration_s": per_page,
+        })
+
+    return {
+        "multi_p": True,
+        "count": count,
+        "title": first.get("playlist_title", ""),
+        "total_duration_s": total_duration,
+        "items": items,
+    }
 
 
-def parse_bv_id(raw: str) -> dict:
+def build_index(bv_id: str, playlist: dict) -> Path:
+    """Generate index.yaml for multi-P video. Returns path."""
+    index_dir = CACHE_DIR / bv_id
+    index_dir.mkdir(parents=True, exist_ok=True)
+    index_path = index_dir / "index.yaml"
+
+    index_data = {
+        "type": "multi_p",
+        "id": bv_id,
+        "title": playlist.get("title", ""),
+        "total": playlist["count"],
+        "items": playlist["items"],
+    }
+    index_path.write_text(yaml.dump(index_data, allow_unicode=True, default_flow_style=False))
+    return index_path
+
+
+def build_cache_dir(bv_id: str, page: int, playlist: dict) -> Path:
+    """Build cache directory based on video type.
+
+    single:   ~/.cache/bilibili-use/<bv_id>/
+    multi_p:  ~/.cache/bilibili-use/<bv_id>/p<N>/
+    """
+    base = CACHE_DIR / bv_id
+    if playlist and playlist.get("multi_p"):
+        base = base / f"p{page}"
+    base.mkdir(parents=True, exist_ok=True)
+    return base
+
+
+def write_resolve(cache_dir: Path, bv_id: str, page: int, vtype: str, original: str):
+    """Write resolve.yaml into cache directory."""
+    resolve_data = {
+        "bv_id": bv_id,
+        "page": page,
+        "type": vtype,
+        "resolved_from": original,
+    }
+    (cache_dir / "resolve.yaml").write_text(
+        yaml.dump(resolve_data, allow_unicode=True, default_flow_style=False))
+
+
+def parse_input(raw: str) -> dict:
+    """Parse raw input into {bv_id, page, timestamp}."""
     raw = raw.strip()
 
     if "b23.tv" in raw:
@@ -80,44 +166,8 @@ def parse_bv_id(raw: str) -> dict:
         page = int(qs.get("p", [1])[0])
         timestamp = int(qs.get("t", [0])[0])
 
-    clean = raw.split("?")[0].split("#")[0]
-
-    bv_id = None
-    m = re.search(r"(BV[0-9A-Za-z]{10})", clean)
-    if m:
-        bv_id = m.group(1)
-
-    if not bv_id:
-        m = re.search(r"av(\d+)", clean, re.IGNORECASE)
-        if m:
-            bv_id = f"av{m.group(1)}"
-
-    if not bv_id:
-        m = re.search(r"ep(\d+)", clean, re.IGNORECASE)
-        if m:
-            bv_id = f"ep{m.group(1)}"
-
-    if not bv_id:
-        print(f"[ERROR] Cannot extract Bilibili video ID from: {raw}", file=sys.stderr)
-        sys.exit(1)
-
+    bv_id = resolve_id(raw)
     return {"bv_id": bv_id, "page": page, "timestamp": timestamp}
-
-
-def build_cache_path(bv_id: str, page: int, playlist_info: dict) -> Path:
-    """Build cache directory path based on video structure.
-
-    Single video:       ~/.cache/bilibili-use/<bv_id>/
-    Multi-P video p1:   ~/.cache/bilibili-use/<bv_id>/      (same as single)
-    Multi-P video p2+:  ~/.cache/bilibili-use/<bv_id>/p<N>/
-    """
-    base = CACHE_DIR / bv_id
-
-    if playlist_info and playlist_info.get("playlist_count", 1) > 1 and page > 1:
-        base = base / f"p{page}"
-
-    base.mkdir(parents=True, exist_ok=True)
-    return base
 
 
 def main():
@@ -126,45 +176,44 @@ def main():
         sys.exit(1)
 
     raw = sys.argv[1]
-    as_json = "--json" in sys.argv
+    parsed = parse_input(raw)
+    bv_id = parsed["bv_id"]
+    page = parsed["page"]
 
-    result = parse_bv_id(raw)
-    bv_id = result["bv_id"]
-    page = result["page"]
-    timestamp = result["timestamp"]
-
-    # Detect multi-P / collection
+    # Detect multi-P
     playlist = detect_playlist(bv_id)
+    is_multi = bool(playlist and playlist.get("multi_p"))
 
-    # Build cache path
-    cache_path = build_cache_path(bv_id, page, playlist)
+    # Build index for multi-P
+    index_path = None
+    if is_multi:
+        index_path = build_index(bv_id, playlist)
 
-    # Save resolution result
-    resolve_cache = cache_path / "resolve.json"
-    resolve_data = {
+    # Build cache directory
+    cache_dir = build_cache_dir(bv_id, page, playlist)
+
+    # Write resolve.yaml
+    vtype = "multi_p" if is_multi else "single"
+    write_resolve(cache_dir, bv_id, page, vtype, raw)
+
+    # Output
+    output = {
+        "type": vtype,
         "bv_id": bv_id,
         "page": page,
-        "timestamp": timestamp,
-        "original": raw,
-        "multi_p": playlist.get("playlist_count", 0) > 1,
-        "playlist": playlist if playlist else None,
-        "cache_dir": str(cache_path),
+        "cache_dir": str(cache_dir),
     }
-    resolve_cache.write_text(json.dumps(resolve_data, ensure_ascii=False, indent=2))
+    if is_multi:
+        output["index_path"] = str(index_path)
+        output["total_pages"] = playlist["count"]
 
-    if as_json:
-        print(json.dumps(resolve_data, ensure_ascii=False, indent=2))
+    print(yaml.dump(output, allow_unicode=True, default_flow_style=False))
+
+    # Status line for human readability
+    if is_multi:
+        print(f"[MULTI-P] {bv_id} → {playlist['count']} pages")
     else:
-        parts = [bv_id]
-        multi = playlist.get("playlist_count", 1)
-        if multi > 1:
-            parts.append(f"[{multi}P]")
-        if page > 1:
-            parts.append(f"p{page}")
-        if timestamp > 0:
-            parts.append(f"t{timestamp}s")
-        print(" ".join(parts))
-    print(f"[CACHED: {resolve_cache}]")
+        print(f"[SINGLE] {bv_id}")
 
 
 if __name__ == "__main__":

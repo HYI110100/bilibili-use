@@ -2,7 +2,6 @@
 
 import re
 from pathlib import Path
-from urllib.parse import urlparse, parse_qs
 
 CACHE_DIR = Path("~/.cache/bilibili-use/").expanduser()
 
@@ -25,22 +24,40 @@ def resolve_id(raw: str) -> str:
         except Exception:
             pass
 
-    # Remove query string and fragment for ID extraction
     clean = raw.split("?")[0].split("#")[0]
 
-    # BV ID
     m = re.search(r"(BV[0-9A-Za-z]{10})", clean)
     if m:
         return m.group(1)
 
-    # AV ID
     m = re.search(r"av(\d+)", clean, re.IGNORECASE)
     if m:
         return f"av{m.group(1)}"
 
-    # Episode ID
     m = re.search(r"ep(\d+)", clean, re.IGNORECASE)
     if m:
         return f"ep{m.group(1)}"
 
     raise ValueError(f"Cannot extract Bilibili video ID from: {raw}")
+
+
+def resolve_cache_dir(raw_input: str, args: list) -> Path:
+    """Determine cache directory from --cache-dir flag or fall back to bv_id.
+
+    Usage in scripts:
+        cache_dir = resolve_cache_dir(sys.argv[1], sys.argv)
+    """
+    for i, arg in enumerate(args):
+        if arg == "--cache-dir" and i + 1 < len(args):
+            return Path(args[i + 1])
+    bv_id = resolve_id(raw_input)
+    return CACHE_DIR / bv_id
+
+
+def read_resolve(cache_dir: Path) -> dict:
+    """Read resolve.yaml from cache_dir, returning {bv_id, page, type, ...}."""
+    import yaml
+    rf = cache_dir / "resolve.yaml"
+    if rf.exists():
+        return yaml.safe_load(rf.read_text()) or {}
+    return {}

@@ -36,17 +36,28 @@ B站平台使用技能。**不是 CLI 命令手册**（那在 `bilibili-cli` ski
 ## 缓存约定
 
 ```
-~/.cache/bilibili-use/<bv_id>/
-├── resolve.json              # 链接解析结果
-├── metadata.yaml             # 元数据（24h TTL）
-├── subtitle.platform.srt     # 平台提供的字幕（永久）
-├── subtitle.compressed.md    # 压缩版（永久）
-├── chunks/                   # 超长字幕拆分片段
-├── ai_summary.md             # B站 AI 总结（永久）
-├── comments.yaml             # 评论（热门 6h / 最新 1h TTL）
-├── audio/                    # 音频分段
-├── video_1080p.mp4           # 完整视频（仅 download_video.py 触发）
-└── frames/                   # 流式抽帧（永久缓存）
+~/.cache/bilibili-use/
+│
+├── <bv_id>/                  # 单视频 / 多P的根
+│   ├── resolve.yaml          # 视频类型和解析结果
+│   ├── metadata.yaml         # 元数据（24h TTL）
+│   ├── subtitle.platform.srt # 平台字幕（永久）
+│   ├── subtitle.compressed.md# 压缩版（永久）
+│   ├── chunks/               # 超长字幕拆分片段
+│   ├── ai_summary.md         # B站 AI 总结（永久）
+│   ├── comments_hot.yaml     # 热门评论（6h TTL）
+│   ├── comments_latest.yaml  # 最新评论（1h TTL）
+│   ├── audio/                # 音频分段
+│   ├── frames/               # 流式抽帧
+│   ├── video_1080p.mp4       # 完整视频
+│   │
+│   ├── p1/                   # 多P视频第1P（结构同上）
+│   ├── p2/                   # 多P视频第2P
+│   └── index.yaml            # 多P列表（page, title, duration_s）
+│
+└── <collection_id>/          # 合集（规划中）
+    ├── index.yaml
+    └── <bv_id>/ ...
 ```
 
 所有 `scripts/*.py` 自动遵循：先查缓存 → 未命中才调 CLI/yt-dlp → 结果写缓存。

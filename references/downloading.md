@@ -86,18 +86,28 @@ python3 scripts/html_to_png.py <html文件>
 ## 缓存结构
 
 ```
-~/.cache/bilibili-use/<bv_id>/
-├── resolve.json               # 链接解析结果
-├── metadata.yaml              # 24h TTL
-├── subtitle.platform.srt      # 永久（B站原始字幕）
-├── subtitle.compressed.md     # 压缩版
-├── chunks/                    # 超长字幕拆分片段
-├── ai_summary.md              # 永久
-├── comments.yaml              # 6h 热门 / 1h 最新 TTL
-├── audio/seg_*.wav            # 永久
-├── frames/*.jpg               # 永久
-├── video_*.mp4                # 7天自动清理（cleanup_cache.py）
-└── p<N>/                      # 多P视频第2P起，结构同上
+~/.cache/bilibili-use/
+│
+├── <bv_id>/                  # 单视频 / 多P的根
+│   ├── resolve.yaml          # 类型: single/multi_p
+│   ├── metadata.yaml         # 24h TTL
+│   ├── subtitle.platform.srt # 永久（B站原始字幕）
+│   ├── subtitle.compressed.md# 压缩版
+│   ├── chunks/               # 超长字幕拆分片段
+│   ├── ai_summary.md         # 永久
+│   ├── comments_hot.yaml     # 6h TTL
+│   ├── comments_latest.yaml  # 1h TTL
+│   ├── audio/seg_*.wav       # 永久
+│   ├── frames/*.jpg          # 永久
+│   ├── video_*.mp4           # 7天自动清理（cleanup_cache.py）
+│   │
+│   ├── p1/                   # 多P视频第1P（结构同上）
+│   ├── p2/                   # 第2P
+│   └── index.yaml            # 多P列表（page, title, duration_s）
+│
+└── <collection_id>/          # 合集（规划中）
+    ├── index.yaml
+    └── <bv_id>/ ...
 ```
 
 ## 画质与 Cookies

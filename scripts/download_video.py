@@ -16,7 +16,7 @@ import sys
 
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
-from config import CACHE_DIR, resolve_id
+from config import resolve_cache_dir, read_resolve
 
 
 def parse_quality(arg: str) -> str:
@@ -47,14 +47,18 @@ def main():
         else:
             i += 1
 
-    bv_id = resolve_id(raw_input)
-    cache_dir = CACHE_DIR / bv_id
+    cache_dir = resolve_cache_dir(raw_input, sys.argv)
     cache_dir.mkdir(parents=True, exist_ok=True)
     video_path = cache_dir / f"video_{max_quality}p.mp4"
 
     if not force and video_path.exists():
         print(f"[CACHE: HIT] {video_path}")
         return
+
+    # Resolve bv_id for URL
+    r = read_resolve(cache_dir)
+    from config import resolve_id
+    bv_id = r.get("bv_id") or resolve_id(raw_input)
 
     url = f"https://www.bilibili.com/video/{bv_id}"
     fmt = "bestvideo+bestaudio/best"
