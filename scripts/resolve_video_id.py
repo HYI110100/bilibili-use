@@ -6,21 +6,25 @@ Usage:
   resolve_video_id.py <input> --yaml     # YAML output (default)
 
 Detects:
-  - single:   普通单视频
-  - multi_p:  多P视频（同一 BV 下有多个分P）
-  - collection: 合集（未来支持）
+  - single:     普通单视频
+  - multi_p:    多P视频（同一 BV 下有多个分P）
+  - collection:  合集（space.bilibili.com/<mid>/lists/<sid> 或 channel/collectiondetail）
 
 Cache structure:
   single:        ~/.cache/bilibili-use/<bv_id>/
   multi_p:       ~/.cache/bilibili-use/<bv_id>/p<N>/
-  collection:    ~/.cache/bilibili-use/<col_id>/<bv_id>/
+  collection:    ~/.cache/bilibili-use/<sid>/<bv_id>/
 
 Output (YAML):
-  type: single|multi_p
+  type: single|multi_p|collection
   bv_id: BV1xxx
   page: 1
   cache_dir: /home/hyi/.cache/bilibili-use/...
-  index_path: /home/hyi/.cache/bilibili-use/.../index.yaml  (multi_p only)
+  index_path: .../index.yaml          (multi_p / collection)
+  total_pages: N                      (multi_p only)
+  collection_id: <sid>                (collection only)
+  title: <合集标题>                    (collection only)
+  total_videos: N                     (collection only)
 """
 
 import subprocess
@@ -37,14 +41,14 @@ from config import CACHE_DIR, resolve_id
 
 
 def follow_redirect(url: str, timeout: int = 10) -> str:
+    """Follow b23.tv redirect. On failure, return original URL (degrade gracefully)."""
     req = urllib.request.Request(url, method="HEAD")
     req.add_header("User-Agent", "Mozilla/5.0")
     try:
         resp = urllib.request.urlopen(req, timeout=timeout)
         return resp.geturl()
-    except Exception as e:
-        print(f"[ERROR] Failed to resolve short link: {e}", file=sys.stderr)
-        sys.exit(1)
+    except Exception:
+        return url
 
 
 def get_total_duration(bv_id: str) -> int:

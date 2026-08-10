@@ -10,11 +10,13 @@ def resolve_id(raw: str) -> str:
     """Parse any B站 link/ID and return canonical BV ID.
 
     Supported: BV1xxx, av123456, ep123456, full URLs, b23.tv short links.
+    Note: collection URLs (space.bilibili.com/.../lists/<sid>) should be
+    handled by resolve_video_id.py's parse_input() before calling this.
     """
     raw = raw.strip()
 
     # b23.tv short link: follow redirect
-    if "b23.tv" in raw and not raw.startswith("BV"):
+    if "b23.tv" in raw:
         import urllib.request
         req = urllib.request.Request(raw, method="HEAD")
         req.add_header("User-Agent", "Mozilla/5.0")
