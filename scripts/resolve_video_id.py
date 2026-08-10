@@ -62,8 +62,78 @@ def get_total_duration(bv_id: str) -> int:
         return 0
 
 
+def _find_bili_cli_python() -> str | None:
+    """Locate python interpreter inside bili CLI's uv environment (if any)."""
+    import shutil
+    bili_path = shutil.which("bili")
+    if not bili_path:
+        return None
+    # Resolve symlinks (uv shim → real env dir), then look for python next to it
+    real = Path(bili_path).resolve()
+    bin_dir = real.parent
+    for candidate in ("python", "python3"):
+        p = bin_dir / candidate
+        if p.exists():
+            return str(p)
+    return None
+
+
+def _pages_via_import(bv_id: str) -> list | None:
+    """Get real pages via bilibili_api imported in the current interpreter."""
+    try:
+        import asyncio
+        from bilibili_api import video
+
+        async def _fetch():
+            v = video.Video(bvid=bv_id)
+            return await v.get_pages()
+
+        return asyncio.run(_fetch())
+    except Exception:
+        return None
+
+
+def _pages_via_bili_cli(bv_id: str) -> list | None:
+    """Get real pages by running bilibili_api inside bili CLI's interpreter."""
+    bili_py = _find_bili_cli_python()
+    if not bili_py:
+        return None
+    code = (
+        "import asyncio, json, sys\n"
+        "from bilibili_api import video\n"
+        "async def main():\n"
+        "    v = video.Video(bvid=sys.argv[1])\n"
+        "    print(json.dumps(await v.get_pages(), ensure_ascii=False))\n"
+        "asyncio.run(main())\n"
+    )
+    result = subprocess.run([bili_py, "-c", code, bv_id],
+                            capture_output=True, text=True, timeout=30)
+    if result.returncode != 0:
+        return None
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return None
+
+
+def get_pages_rich(bv_id: str) -> list | None:
+    """Get real per-P titles/durations via bilibili_api with fallback chain.
+
+    Chain: current interpreter → bili CLI interpreter → None (degrade).
+    Returns [{page, part, duration, cid}, ...] or None if unavailable.
+    """
+    pages = _pages_via_import(bv_id)
+    if pages is None:
+        pages = _pages_via_bili_cli(bv_id)
+    return pages
+
+
 def detect_playlist(bv_id: str) -> dict:
-    """Check if video is multi-P via yt-dlp flat playlist."""
+    """Check if video is multi-P via yt-dlp flat playlist.
+
+    Page count from yt-dlp; real titles/durations via bilibili_api
+    (degraded to P1/P2 placeholders + average duration if unavailable).
+    """
     url = f"https://www.bilibili.com/video/{bv_id}"
     result = subprocess.run(
         ["yt-dlp", "--flat-playlist", "--dump-json", url],
@@ -89,17 +159,25 @@ def detect_playlist(bv_id: str) -> dict:
     if count <= 1 and len(entries) <= 1:
         return {}
 
-    # Get total duration for per-page estimate
-    total_duration = get_total_duration(bv_id)
-    per_page = total_duration // count if count > 0 else 0
-
-    items = []
-    for i in range(count):
-        items.append({
+    # Try real titles/durations via bilibili_api (best effort)
+    rich_pages = get_pages_rich(bv_id)
+    if rich_pages and len(rich_pages) == count:
+        items = [{
+            "page": p.get("page", i + 1),
+            "title": p.get("part", f"P{i + 1}"),
+            "duration_s": p.get("duration") or 0,
+            "cid": p.get("cid"),
+        } for i, p in enumerate(rich_pages)]
+        total_duration = sum(p.get("duration") or 0 for p in rich_pages)
+    else:
+        # Degrade: placeholders + average duration
+        total_duration = get_total_duration(bv_id)
+        per_page = total_duration // count if count > 0 else 0
+        items = [{
             "page": i + 1,
             "title": f"P{i + 1}",
             "duration_s": per_page,
-        })
+        } for i in range(count)]
 
     return {
         "multi_p": True,

@@ -40,6 +40,20 @@ python -m playwright install chromium
 
 > `playwright` 仅 `html_to_png.py` 需要。不需要 PNG 输出可不装。
 
+### 可选：bilibili-api（真实分P标题）
+
+多P视频的 `index.yaml` 需要真实分P标题和每P时长。脚本优先用 `bilibili-api` 获取，找不到时**自动降级**为占位标题（P1/P2 + 平均时长），其余功能不受影响。
+
+```bash
+# 方式1：装到脚本运行环境（推荐）
+pip install bilibili-api
+
+# 方式2：不装也行——脚本会自动借用 bili CLI 环境里的库
+# （uv tool install bilibili-cli 自带 bilibili-api）
+```
+
+> 降级链：当前解释器 → bili CLI 解释器 → 占位标题。装了任意一个都不用额外配置。
+
 ### 登录
 
 ```bash
