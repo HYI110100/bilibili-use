@@ -3,7 +3,7 @@
 当用户让你「看看」或「总结」一个 B站 视频时的策略。
 多步骤操作时保持进度跟踪。
 
-> **需要获取资源？** 看 `downloading.md`——它管怎么拿。本文只决定拿什么。
+> **脚本详细参数和边界情况** 看 `downloading.md`。
 
 ## 流程
 
@@ -86,5 +86,6 @@ AI总结:
 
 如果元数据显示 `[MULTI-P: N pages]`：
 - 警告用户，只处理第1P
-- 可调用 `python3 scripts/get_list_all.py <bv_id>` 列出全部分P标题
-- 其他P：用 yt-dlp `-I <N>`（超出 bili CLI 范围）
+- 列出全部分P标题：
+  `yt-dlp --flat-playlist --print title https://www.bilibili.com/video/<bv_id>`
+- 下载其他P：`yt-dlp -I <N> https://www.bilibili.com/video/<bv_id>`

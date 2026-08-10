@@ -59,7 +59,7 @@ bilibili-use/
 │   ├── downloading.md         ← 下载执行（12个脚本调用）
 │   └── summarizing.md         ← 总结输出（闲聊/速览/文章/思维导图）
 └── scripts/
-    ├── config.py              ← 共享配置（缓存路径、TTL 常量）
+    ├── config.py              ← 共享配置（缓存路径、ID解析）
     ├── resolve_video_id.py    ← 链接解析：BV/AV/ep/b23.tv → 统一 ID
     ├── get_video_info.py      ← 元数据 + 多P 检测
     ├── get_subtitle.py        ← 字幕获取 + 超长自动拆分
@@ -76,19 +76,22 @@ bilibili-use/
 
 ## 缓存
 
-所有内容缓存于 `~/.cache/bilibili-use/<bv_id>/`：
+所有内容缓存于 `~/.cache/bilibili-use/`：
 
 ```
 ~/.cache/bilibili-use/
 └── <bv_id>/
-    ├── metadata.yaml          # 24h TTL
-    ├── subtitle.platform.srt  # 永久
-    ├── subtitle.compressed.md # 永久
-    ├── ai_summary.md          # 永久
-    ├── comments.yaml          # 6h/1h TTL
-    ├── audio/                 # WAV 分段
-    ├── frames/                # JPG 帧
-    └── video_*.mp4            # 完整视频（7天自动清理）
+    ├── resolve.json            # 链接解析结果
+    ├── metadata.yaml           # 24h TTL
+    ├── subtitle.platform.srt   # 永久
+    ├── subtitle.compressed.md  # 永久
+    ├── chunks/                 # 超长字幕拆分片段
+    ├── ai_summary.md           # 永久
+    ├── comments.yaml           # 6h/1h TTL
+    ├── audio/                  # WAV 分段
+    ├── frames/                 # JPG 帧
+    ├── video_*.mp4             # 完整视频（7天自动清理）
+    └── p<N>/                   # 多P视频第2P起，结构同上
 ```
 
 ## 工作流
@@ -96,7 +99,7 @@ bilibili-use/
 ```
 用户发 B站链接
   → SKILL.md 路由到 summarizing.md（默认闲聊模式）
-    → 内部先调 watching.md（5步分析流程）
+    → 内部先调 watching.md（三阶段分析流程）
       → 需要资源时调 downloading.md（12个脚本）
     → 最终输出：闲聊 / 速览 / 文章 / 思维导图
 ```

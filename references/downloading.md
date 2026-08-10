@@ -87,15 +87,17 @@ python3 scripts/html_to_png.py <html文件>
 
 ```
 ~/.cache/bilibili-use/<bv_id>/
-├── metadata.yaml             # 24h TTL
-├── subtitle.platform.srt     # 永久（B站原始字幕）
-├── subtitle.compressed.md    # 压缩版
-├── chunks/                   # 超长字幕拆分片段
-├── ai_summary.md             # 永久
-├── comments.yaml             # 6h 热门 / 1h 最新 TTL
-├── audio/seg_*.wav           # 永久
-├── frames/*.jpg              # 永久
-└── video_*.mp4               # 永久（cleanup_cache.py 自动清理旧文件）
+├── resolve.json               # 链接解析结果
+├── metadata.yaml              # 24h TTL
+├── subtitle.platform.srt      # 永久（B站原始字幕）
+├── subtitle.compressed.md     # 压缩版
+├── chunks/                    # 超长字幕拆分片段
+├── ai_summary.md              # 永久
+├── comments.yaml              # 6h 热门 / 1h 最新 TTL
+├── audio/seg_*.wav            # 永久
+├── frames/*.jpg               # 永久
+├── video_*.mp4                # 7天自动清理（cleanup_cache.py）
+└── p<N>/                      # 多P视频第2P起，结构同上
 ```
 
 ## 画质与 Cookies

@@ -30,8 +30,6 @@ B站平台使用技能。**不是 CLI 命令手册**（那在 `bilibili-cli` ski
 | `scripts/extract_frames.py` | 流式抽帧（不下载完整视频） |
 | `scripts/html_to_png.py` | HTML 转 PNG（思维导图输出用） |
 | `scripts/download_video.py` | 下载完整视频文件 |
-| `scripts/extract_audio.py` | 提取音频（ASR-ready WAV 分段） |
-| `scripts/extract_stt.py` | 本地语音转写（未实现，返回降级指引） |
 | `scripts/cleanup_cache.py` | 缓存清理（每次操作前自动执行） |
 | `yt-dlp` | 下载/流媒体直链/多P检测（兜底） |
 
