@@ -1,36 +1,17 @@
-# 直接使用 bilibili-api-python 库
+# bilibili-api-python 库——发评论、私信、直播、投稿等
 
-CLI（bilibili-cli）只包装了库的一小部分能力（约 24 个函数 vs 库 41 个模块）。
-**CLI 没有命令的功能**——发评论、关注、私信、直播、投稿上传、创作中心数据——直接调库完成。
+B站全功能 Python 库。以下功能只能通过本库完成（`bili` CLI 无对应命令）：**发评论/回复、关注、私信、消息通知、直播操作、视频投稿、创作中心数据**。
 
-> 完整能力菜单：`vendor/bilibili-api-python-capabilities.md`（41 模块，从 17.4.2 源码逐一枚举）。
-> 库已停更（生态风险见 AGENTS.md），绝版 wheel 兜底在 `vendor/`。
+全部 41 个模块的能力索引见 `vendor/bilibili-api-python-capabilities.md`——做上面没列的事之前先查它。
 
-## 何时用库，何时用 CLI
+## 环境准备（每次使用前完成）
 
-| 场景 | 用 |
-|---|---|
-| CLI 已有的命令（视频信息/字幕/评论**读取**/热门/收藏/点赞/发动态...） | CLI（输出规范、省事） |
-| 发评论 / 回复 / 楼中楼 | 库 |
-| **关注**（CLI 只有 unfollow） | 库 |
-| 私信、回复/赞/@ 通知 | 库 |
-| 直播：开播/禁言/送礼/弹幕监听 | 库 |
-| 视频投稿 / 改稿 / 传字幕 | 库 |
-| 创作中心数据（播放/粉丝图表、评论批量管理） | 库 |
-| 互动视频下载、番剧/课程/漫画 | 库 |
+**解释器**：库要求 Python >= 3.10。
+- `bili` CLI 已装则其 uv 环境自带本库：定位方式同 `resolve_video_id.py` 的 `_find_bili_cli_python()`（`shutil.which("bili")` → 同目录找 python）
+- 或本机 Python >= 3.10：`pip install bilibili-api-python`
+- PyPI 不可用时：`pip install ./vendor/bilibili_api_python-17.4.2-py3-none-any.whl`
 
-## 运行环境
-
-库要求 **Python >= 3.10**。本技能脚本本身兼容 3.8+，互不影响——库调用单独跑，可用：
-
-1. **bili CLI 的解释器（推荐，零配置）**：`bili` 已装则其 uv 环境自带本库。定位方式同 `resolve_video_id.py` 的 `_find_bili_cli_python()`（`shutil.which("bili")` → 同目录找 python）
-2. 本机 Python >= 3.10：`pip install bilibili-api-python`
-3. PyPI 下架时离线装：`pip install ./vendor/bilibili_api_python-17.4.2-py3-none-any.whl`
-
-## 凭证（关键：复用 CLI 的登录态，不二次扫码）
-
-库的每个 API 都接受 `Credential` 对象（本质是 Cookie 容器）。`bili login` 之后，
-CLI 把凭证存在 `~/.bilibili-cli/credential.json`，字段与库的构造参数**一一对齐**，直接读：
+**凭证**：读 `bili login` 存下的登录态（先 `bili login` 扫码登录一次）：
 
 ```python
 import json
@@ -40,7 +21,7 @@ from bilibili_api import Credential
 cfg = json.loads((Path.home() / ".bilibili-cli" / "credential.json").read_text())
 cred = Credential(
     sessdata=cfg["sessdata"],
-    bili_jct=cfg["bili_jct"],        # 写操作必须；为空 = 凭证只读
+    bili_jct=cfg["bili_jct"],   # 写操作必须；为空 = 凭证只读，需重新 bili login
     buvid3=cfg["buvid3"],
     buvid4=cfg["buvid4"],
     dedeuserid=cfg["dedeuserid"],
@@ -48,37 +29,22 @@ cred = Credential(
 )
 ```
 
-> 前提：先 `bili login` 扫码登录过一次。
-> 凭证失效的表现：`not_authenticated` 类错误 → 重跑 `bili login`。
-> 完全没有 CLI 时，库自带扫码原语：`login_v2.QrCodeLogin`（`generate_qrcode()` →
-> 轮询 `check_state()` → `get_credential()`），但凭证持久化要自己写。
-
-## 同步调用（免 async 样板）
+**调用形式**：所有 API 是 async，用 `sync()` 同步执行：
 
 ```python
 from bilibili_api import sync
-result = sync(some_async_api(...))
+result = sync(some_api(..., credential=cred))
 ```
 
-## 已验证示例
+**写操作确认**：以下所有写操作作用于用户真实账号——执行前向用户复述「动作 + 对象 + 内容」，确认后才执行（同 publishing.md 安全铁律）。
 
-### 关注 UP（CLI 未暴露此能力）
-
-```python
-from bilibili_api import user, sync
-
-sync(user.User(uid=946974).modify_relation(user.RelationType.SUBSCRIBE))
-# RelationType: SUBSCRIBE / UNSUBSCRIBE / BLOCK / UNBLOCK / REMOVE_FANS
-# （SUBSCRIBE_SECRETLY 悄悄关注在 17.4.2 已标注失效）
-```
-
-### 发评论 / 回复
+## 发评论 / 回复
 
 ```python
 from bilibili_api import comment, sync, bvid2aid
 from bilibili_api.comment import CommentResourceType
 
-oid = bvid2aid("BV1xxxxxxxx")   # ⚠️ 视频评论的 oid 是 av 号，不是 BV 号
+oid = bvid2aid("BV1xxxxxxxx")   # ⚠️ oid 是 av 号，不是 BV 号
 sync(comment.send_comment(
     "好活当赏",
     oid=oid,
@@ -86,17 +52,118 @@ sync(comment.send_comment(
     credential=cred,
 ))
 # 回复评论：root=<评论ID>
-# 楼中楼：root=<所在评论ID>, parent=<被回复评论ID>
+# 楼中楼：  root=<所在评论ID>, parent=<被回复评论ID>
 # 资源类型：VIDEO / ARTICLE / DYNAMIC / DYNAMIC_DRAW / AUDIO / AUDIO_LIST / CHEESE / MANGA 等
 ```
 
-## 安全铁律（同 publishing.md）
+## 关注 / 拉黑 / 移除粉丝
 
-所有写操作（发评论/关注/私信/送礼/开播/删稿...）作用于用户真实账号：
-**先向用户复述「动作 + 对象 + 内容」，确认后才执行。**
+```python
+from bilibili_api import user, sync
 
-## 风险与已知失效
+sync(user.User(uid=946974, credential=cred).modify_relation(user.RelationType.SUBSCRIBE))
+# SUBSCRIBE / UNSUBSCRIBE / BLOCK / UNBLOCK / REMOVE_FANS
+# （SUBSCRIBE_SECRETLY 悄悄关注已失效）
+```
 
-- 库 17.4.2 为绝版（2026-07 关停），B站接口变更后对应能力可能**静默失效**——调用报错时先怀疑接口变动
-- 已知失效：manga 正文图片（2025-01 起）、专栏/笔记上传（源码 TODO 未实现）、`video.get_stat`
-- 详细失效清单见 `vendor/bilibili-api-python-capabilities.md` 末节
+## 私信
+
+```python
+from bilibili_api import session, sync
+from bilibili_api.session import EventType
+
+sync(session.send_msg(
+    credential=cred,
+    receiver_id=946974,
+    msg_type=EventType.TEXT,
+    content="你好",
+))
+```
+
+## 消息通知（谁回复/赞/@ 了我）
+
+```python
+from bilibili_api import session, sync
+
+sync(session.get_replies(credential=cred))   # 收到的回复
+sync(session.get_likes(credential=cred))     # 收到的赞
+sync(session.get_at(credential=cred))        # 收到的 @
+sync(session.fetch_session_msgs(credential=cred, talker_id=946974))  # 与某人的最近消息
+```
+
+## 直播
+
+```python
+from bilibili_api import live, sync
+
+room = live.LiveRoom(room_display_id=21452505, credential=cred)
+sync(room.start(area_id=21))     # 开播（分区ID用 live_area 模块查）
+sync(room.stop())                # 下播
+sync(room.ban_user(uid=946974))  # 禁言
+```
+
+监听实时弹幕/礼物/SC（60+ 事件，长驻任务）：
+
+```python
+from bilibili_api import live
+
+dm = live.LiveDanmaku(room_display_id=21452505, credential=cred)
+
+@dm.on("DANMU_MSG")
+async def on_danmu(event):
+    print(event)
+
+sync(dm.connect())   # 断开：dm.disconnect()；事件清单见 capabilities 文档 live 节
+```
+
+## 视频投稿
+
+```python
+from bilibili_api import Picture, sync
+from bilibili_api.video_uploader import VideoUploader, VideoUploaderPage, VideoMeta
+
+meta = VideoMeta(
+    tid=17,                          # 分区ID，用 video_zone 模块查
+    title="标题",
+    desc="简介",
+    cover=Picture.from_file("cover.jpg"),
+    tags="标签1,标签2",
+    delay_time=3600,                 # 可选：定时发布（秒）；立即发布删掉此行
+)
+pages = [VideoUploaderPage(path="video.mp4", title="第一P")]
+uploader = VideoUploader(pages, meta, credential=cred)
+sync(uploader.start())
+# 改已发布稿件：VideoEditor(bvid, meta_dict, credential=cred).start()
+```
+
+## 创作中心数据（数据看板、评论/稿件管理）
+
+```python
+from bilibili_api import creative_center, sync
+
+sync(creative_center.get_overview(credential=cred))                    # 数据概览
+sync(creative_center.get_fan_graph(credential=cred))                    # 粉丝增长
+sync(creative_center.get_video_upload_manager_info(credential=cred))    # 稿件列表
+sync(creative_center.get_comments(credential=cred, keyword="关键词"))    # 全账号评论搜索
+sync(creative_center.del_comments(credential=cred, oid=[<视频ID>], rpid=[<评论ID>]))  # 批量删评论
+```
+
+## 更多能力
+
+以上只是高频入口。完整索引（41 模块 × 每个类的方法清单）：`vendor/bilibili-api-python-capabilities.md`，按域速查：
+
+| 想做什么 | 看该节 |
+|---|---|
+| 番剧/课程/漫画/音频/歌单 | bangumi / cheese / manga / audio |
+| 收藏夹管理、观看历史写入 | favorite_list / user |
+| 弹幕发送、ass 字幕转换 | video / ass |
+| 互动视频（剧情树、打包下载） | interactive_video |
+| 专栏文章读取、图文动态 | article / opus |
+| 投票、话题、表情 | vote / topic / emoji |
+| 小黑屋、风纪委员 | black_room |
+
+## 排错
+
+- `not_authenticated` 类错误 → 凭证失效，重跑 `bili login`
+- 报错但代码正确 → 先怀疑B站接口变更（库已停更，见 AGENTS.md 生态风险）
+- 已知失效：manga 正文图片、专栏/笔记上传、`video.get_stat`、悄悄关注——完整清单见 capabilities 文档末节
