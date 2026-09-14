@@ -56,7 +56,7 @@ pip install bilibili-api-python
 >
 > 降级链：当前解释器 → bili CLI 解释器 → 占位标题。装了任意一个都不用额外配置。
 >
-> ⚠️ 生态风险（2026-09）：bilibili-api-python 的 GitHub 仓库已被B站侵权告知函关停（2026-07），PyPI 末版 17.4.2 为绝版、仍可安装。bili CLI 的写操作（点赞/投币/发动态等）依赖此库，B站接口变更后可能失效。
+> ⚠️ 生态风险（2026-09）：bilibili-api-python 的 GitHub 仓库已被B站侵权告知函关停（2026-07），PyPI 末版 17.4.2 为绝版、仍可安装。bili CLI 的写操作（点赞/投币/发动态等）依赖此库，B站接口变更后可能失效。两个包的最终版 wheel 已收录在 `vendor/`（含 sha256 校验），PyPI 下架后按 `vendor/README.md` 离线安装；库的完整能力清单见 `vendor/bilibili-api-python-capabilities.md`。
 
 ### 登录
 
@@ -79,6 +79,7 @@ bilibili-use/
 │   ├── browsing.md            ← 逛B站/发现内容
 │   ├── publishing.md          ← 发动态/点赞互动
 │   └── account.md             ← 账号分析/运营
+├── vendor/                    ← 离线兜底 wheel（含 sha256）+ 库能力清单，见 vendor/README.md
 └── scripts/
     ├── config.py              ← 共享配置（缓存路径、ID解析）
     ├── resolve_video_id.py    ← 链接解析：BV/AV/ep/b23.tv → 统一 ID
