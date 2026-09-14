@@ -48,9 +48,9 @@ B站平台使用技能。**不是 CLI 命令手册**（那在 `bilibili-cli` ski
 |---|---|
 | 发来B站链接（默认） | `references/summarizing.md`（内部先调 watching） |
 | 下载视频文件 | `references/downloading.md` |
-| 逛B站/发现内容 | `references/browsing.md`（规划中） |
-| 发视频/动态 | `references/publishing.md`（规划中） |
-| 账号分析/运营 | `references/account.md`（规划中） |
+| 逛B站/发现内容 | `references/browsing.md` |
+| 发动态/点赞互动 | `references/publishing.md` |
+| 账号分析/运营 | `references/account.md` |
 
 > `watching.md` 是内部步骤，由 summarizing 或 downloading 调用，不直接响应用户请求。
 
@@ -64,5 +64,5 @@ B站平台使用技能。**不是 CLI 命令手册**（那在 `bilibili-cli` ski
 - 字幕超长 → `get_subtitle.py` 自动拆分 → 并行压缩各段 → 只看压缩结果
 - 多步骤操作时保持进度跟踪（按平台的 task/todo 机制）
 - 帧的两种用途：①自己分析——用平台图片/视觉能力看（模型无原生视觉走辅助视觉模型）；②展示给用户——有视觉亮点时用平台媒体语法附上（见 summarizing.md「展示帧给用户」）。视觉工具不可用才跳过分析
-- 多P真实标题/时长依赖 `bilibili-api`，未装时自动降级（当前解释器 → bili CLI 环境 → 占位标题），详见 AGENTS.md
+- 多P真实标题/时长依赖 `bilibili-api-python`，未装时自动降级（当前解释器 → bili CLI 环境 → 占位标题），详见 AGENTS.md
 - markmap 思维导图生成前需加载其 skill 文档

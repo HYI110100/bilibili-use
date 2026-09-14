@@ -40,19 +40,23 @@ python -m playwright install chromium
 
 > `playwright` 仅 `html_to_png.py` 需要。不需要 PNG 输出可不装。
 
-### 可选：bilibili-api（真实分P标题）
+### 可选：bilibili-api-python（真实分P标题）
 
-多P视频的 `index.yaml` 需要真实分P标题和每P时长。脚本优先用 `bilibili-api` 获取，找不到时**自动降级**为占位标题（P1/P2 + 平均时长），其余功能不受影响。
+多P视频的 `index.yaml` 需要真实分P标题和每P时长。脚本优先用 `bilibili-api-python` 获取，找不到时**自动降级**为占位标题（P1/P2 + 平均时长），其余功能不受影响。
 
 ```bash
 # 方式1：装到脚本运行环境（推荐）
-pip install bilibili-api
+pip install bilibili-api-python
 
 # 方式2：不装也行——脚本会自动借用 bili CLI 环境里的库
-# （uv tool install bilibili-cli 自带 bilibili-api）
+# （uv tool install bilibili-cli 自带 bilibili-api-python）
 ```
 
+> ⚠️ **包名陷阱**：PyPI 上还有个 `bilibili-api`（无 `-python` 后缀）——2021 年停更的另一个项目，无这些能力，**不要装错**。两个包的 import 名都是 `bilibili_api`，装错会静默降级。
+>
 > 降级链：当前解释器 → bili CLI 解释器 → 占位标题。装了任意一个都不用额外配置。
+>
+> ⚠️ 生态风险（2026-09）：bilibili-api-python 的 GitHub 仓库已被B站侵权告知函关停（2026-07），PyPI 末版 17.4.2 为绝版、仍可安装。bili CLI 的写操作（点赞/投币/发动态等）依赖此库，B站接口变更后可能失效。
 
 ### 登录
 
@@ -71,7 +75,10 @@ bilibili-use/
 ├── references/
 │   ├── watching.md            ← 观看策略（内部步骤）
 │   ├── downloading.md         ← 下载执行（12个脚本调用）
-│   └── summarizing.md         ← 总结输出（闲聊/速览/文章/思维导图）
+│   ├── summarizing.md         ← 总结输出（闲聊/速览/文章/思维导图）
+│   ├── browsing.md            ← 逛B站/发现内容
+│   ├── publishing.md          ← 发动态/点赞互动
+│   └── account.md             ← 账号分析/运营
 └── scripts/
     ├── config.py              ← 共享配置（缓存路径、ID解析）
     ├── resolve_video_id.py    ← 链接解析：BV/AV/ep/b23.tv → 统一 ID

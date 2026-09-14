@@ -1,8 +1,7 @@
 # 下载 B站 资源
 
 > **需要从B站获取任何资源（字幕、音频、帧、视频文件、AI摘要、评论、元数据）
-> ——本文档管怎么拿。其他 reference（watching、browsing、publishing）只管决定拿什么。**
-> （browsing / publishing 规划中，尚未实现）
+> ——本文档管怎么拿。其他 reference（watching、browsing、publishing、account）只管决定拿什么。**
 
 ## 可用脚本
 
