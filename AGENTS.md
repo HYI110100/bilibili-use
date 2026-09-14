@@ -82,7 +82,7 @@ bilibili-use/
     ├── compute_timestamps.py  ← 热力图算法：时长 → 抽帧时间点
     ├── extract_frames.py      ← 流式抽帧（不下载完整视频）
     ├── extract_audio.py       ← 音频提取（ASR-ready WAV）
-    ├── extract_stt.py         ← 本地 STT（未实现，返回降级指引）
+    ├── extract_stt.py         ← STT 留白（agent 按用户偏好自行补充）
     ├── download_video.py      ← 完整视频下载
     ├── html_to_png.py         ← HTML 转 PNG（思维导图输出）
     └── cleanup_cache.py       ← 缓存清理（Step 0 自动执行）

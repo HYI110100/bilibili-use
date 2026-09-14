@@ -24,7 +24,7 @@ B站平台使用技能。**不是 CLI 命令手册**（那在 `bilibili-cli` ski
 | `scripts/get_subtitle.py` | 获取字幕，超长自动拆分（返回路径，不返回内容） |
 | `scripts/get_ai_summary.py` | 获取 B站 AI 总结（段落摘要） |
 | `scripts/extract_audio.py` | 提取音频（ASR-ready WAV 分段） |
-| `scripts/extract_stt.py` | 本地语音转写（占位，降级为视觉分析） |
+| `scripts/extract_stt.py` | 语音转写留白——agent 按用户偏好自行补充（通常调 STT 服务） |
 | `scripts/get_comments.py` | 获取评论（热门/最新） |
 | `scripts/compute_timestamps.py` | 热力图算法：时长 → 最佳抽帧时间点 |
 | `scripts/extract_frames.py` | 流式抽帧（不下载完整视频） |
