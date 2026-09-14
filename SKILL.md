@@ -51,6 +51,7 @@ B站平台使用技能。**不是 CLI 命令手册**（那在 `bilibili-cli` ski
 | 逛B站/发现内容 | `references/browsing.md` |
 | 发动态/点赞互动 | `references/publishing.md` |
 | 账号分析/运营 | `references/account.md` |
+| CLI 没有的能力（发评论/关注/私信/直播/投稿） | `references/library.md`（直调 bilibili-api-python） |
 
 > `watching.md` 是内部步骤，由 summarizing 或 downloading 调用，不直接响应用户请求。
 

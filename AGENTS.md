@@ -78,7 +78,8 @@ bilibili-use/
 │   ├── summarizing.md         ← 总结输出（闲聊/速览/文章/思维导图）
 │   ├── browsing.md            ← 逛B站/发现内容
 │   ├── publishing.md          ← 发动态/点赞互动
-│   └── account.md             ← 账号分析/运营
+│   ├── account.md             ← 账号分析/运营
+│   └── library.md             ← 直调 bilibili-api-python（CLI 未暴露的能力）
 ├── vendor/                    ← 离线兜底 wheel（含 sha256）+ 库能力清单，见 vendor/README.md
 └── scripts/
     ├── config.py              ← 共享配置（缓存路径、ID解析）
