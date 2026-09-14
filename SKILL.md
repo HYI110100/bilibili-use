@@ -4,7 +4,7 @@ description: "Use when the user 发来B站链接或视频ID — 默认闲聊总�
 version: 0.1.0
 author: hyi, Hermes Agent
 license: MIT
-platforms: [linux]
+platforms: [linux, windows]
 metadata:
   hermes:
     tags: [bilibili, b站, video, content, social-media]
@@ -56,7 +56,8 @@ B站平台使用技能。**不是 CLI 命令手册**（那在 `bilibili-cli` ski
 
 ## 全局规则
 
-- **Step 0**: 任何操作前，先执行 `python3 scripts/cleanup_cache.py`（无脑执行）
+- **Step 0**: 任何操作前，先执行 `python3 scripts/cleanup_cache.py`（无脑执行。Windows 上命令是 `python`）
+- 平台差异：文档中 `python3` 在 Windows 上用 `python`；`~/` 在 Windows 上是 `%USERPROFILE%`；缓存目录由 `config.py` 自动处理，无需关心
 - 所有 `scripts/*.py` 先查缓存 → 未命中才调 CLI/yt-dlp → 结果写缓存
 - `bili` 命令始终加 `--yaml`
 - 抽帧走流式（`yt-dlp -g` + `ffmpeg -ss`），不下载完整视频

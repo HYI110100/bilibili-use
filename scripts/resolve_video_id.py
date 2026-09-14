@@ -27,6 +27,8 @@ Output (YAML):
   total_videos: N                     (collection only)
 """
 
+from __future__ import annotations
+
 import subprocess
 import sys
 import json

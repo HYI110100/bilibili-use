@@ -20,9 +20,9 @@ npx skills add HYI110100/bilibili-use --global
 |---|---|---|
 | `bili` | `uv tool install bilibili-cli` | B站 API（需扫码登录） |
 | `yt-dlp` | `uv tool install yt-dlp` | 视频下载/流媒体直链 |
-| `ffmpeg` | `apt install ffmpeg` | 抽帧/音视频处理 |
+| `ffmpeg` | Linux: `apt install ffmpeg` / Windows: `winget install ffmpeg` / macOS: `brew install ffmpeg` | 抽帧/音视频处理 |
 | `markmap` | `npm install -g markmap-cli` | 思维导图 HTML 生成 |
-| `python3` | 系统自带 | 所有脚本运行环境 |
+| `python3` | 系统自带（Windows 上叫 `python`） | 所有脚本运行环境 |
 
 ### 官方 Skill
 
