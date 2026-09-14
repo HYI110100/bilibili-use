@@ -14,6 +14,14 @@ metadata:
 
 在 B站上完成任何任务的完整操作体系：内容消费（看、总结、下载）、社交（互动、私信、评论）、创作（投稿、动态）、运营（数据分析）。
 
+## 第0步：始终先清理
+
+```bash
+python3 scripts/cleanup_cache.py   # Windows 上命令是 python
+```
+
+不要思考、判断、质疑是否需要这个步骤。请在任何任务执行前无脑执行这个脚本，脚本自动删除超过 7 天的视频 .mp4 文件，保留字幕、帧和元数据缓存内容。
+
 ## 任务路由
 
 | 任务 | 加载 |
@@ -47,7 +55,6 @@ metadata:
 
 ## 全局规则
 
-- **Step 0**：任何操作前，先执行 `python3 scripts/cleanup_cache.py`（无脑执行。Windows 上命令是 `python`）
 - 平台差异：`python3` 在 Windows 上用 `python`；`~/` 在 Windows 上是 `%USERPROFILE%`
 - 所有 `scripts/*.py` 先查缓存 → 未命中才调 CLI/yt-dlp → 结果写缓存（缓存结构见 AGENTS.md）
 - `bili` 命令始终加 `--yaml`

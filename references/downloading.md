@@ -20,15 +20,6 @@
 | `html_to_png.py` | HTML → PNG 截图 | N/A | PNG 文件路径 |
 | `cleanup_cache.py` | 清理旧视频文件 | N/A | 释放的 MB 数 |
 
-## 第0步：始终先清理
-
-```bash
-python3 scripts/cleanup_cache.py
-```
-
-不要思考，不要判断是否需要。在任何内容获取前无脑执行。
-脚本自动删除超过 7 天的视频 .mp4 文件，保留字幕、帧和元数据。
-
 ### 解析链接（最先执行）
 ```bash
 python3 scripts/resolve_video_id.py <url>
