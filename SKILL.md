@@ -51,6 +51,7 @@ python3 scripts/cleanup_cache.py   # Windows 上命令是 python
 | `scripts/download_video.py` | 下载完整视频 |
 | `scripts/html_to_png.py` | HTML → PNG（思维导图输出） |
 | `scripts/cleanup_cache.py` | 缓存清理 |
+| `scripts/login.py` | 扫码登录（修复版：PNG 二维码 + ticket→cookie 交换；勿用已坏的 `bili login`） |
 | `scripts/config.py` | 共享配置，被其他脚本 import |
 
 ## 全局规则

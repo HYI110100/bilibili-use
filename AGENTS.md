@@ -61,8 +61,15 @@ pip install bilibili-api-python
 ### 登录
 
 ```bash
-bili login    # 扫码登录 B站
+python3 scripts/login.py          # 扫码登录：生成二维码 PNG，agent 直接把图片给用户扫
+python3 scripts/login.py --check  # 检查当前登录状态
 ```
+
+> ⚠️ 不要用 `bili login`（2026-08 起已坏）：B站扫码登录改为 crossDomain ticket 下发 cookie，
+> bili CLI 依赖的绝版 bilibili-api-python 17.4.2 只解析 URL query，会「登录成功」但存空凭证。
+> 且终端字符二维码在 GUI/agent 场景常变形扫不了。`scripts/login.py` 两个问题都修了
+> （PNG 输出 + ticket→Set-Cookie 交换，兼容新旧两种格式）。凭证仍写 `~/.bilibili-cli/credential.json`，
+> 与 bili CLI 完全兼容。
 
 未登录不影响基本搜索和热门，但画质受限、无法获取个性化内容。
 
